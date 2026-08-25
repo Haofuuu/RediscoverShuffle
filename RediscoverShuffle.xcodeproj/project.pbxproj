@@ -1,0 +1,566 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* RediscoverShuffleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* RediscoverShuffleApp.swift */; };
+		A10000000000000000000002 /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* LibraryModels.swift */; };
+		A10000000000000000000003 /* WeightedShuffleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* WeightedShuffleEngine.swift */; };
+		A10000000000000000000004 /* MusicLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* MusicLibraryService.swift */; };
+		A10000000000000000000005 /* MusicPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* MusicPlaybackService.swift */; };
+		A10000000000000000000006 /* PlaylistViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* PlaylistViewModel.swift */; };
+		A10000000000000000000007 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* RootView.swift */; };
+		A10000000000000000000008 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* PermissionView.swift */; };
+		A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* PlaylistBrowserView.swift */; };
+		A1000000000000000000000A /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* PlaylistDetailView.swift */; };
+		A1000000000000000000000B /* QueuePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* QueuePreviewView.swift */; };
+		A1000000000000000000000C /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* Components.swift */; };
+		A1000000000000000000000D /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* MediaPlayer.framework */; };
+		A1000000000000000000000E /* WeightedShuffleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* WeightedShuffleEngineTests.swift */; };
+		A1000000000000000000000F /* PinnedPlaylistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* PinnedPlaylistStore.swift */; };
+		A10000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* Assets.xcassets */; };
+		A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* GeneratedQueueSession.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A30000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A40000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000001;
+			remoteInfo = RediscoverShuffle;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* RediscoverShuffleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RediscoverShuffleApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryModels.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* WeightedShuffleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightedShuffleEngine.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* MusicLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryService.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* MusicPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlaybackService.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* PlaylistViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistViewModel.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* PermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* PlaylistBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistBrowserView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* QueuePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueuePreviewView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* WeightedShuffleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightedShuffleEngineTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
+		A2000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000010 /* RediscoverShuffle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RediscoverShuffle.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000011 /* RediscoverShuffleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RediscoverShuffleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000012 /* PinnedPlaylistStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedPlaylistStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000000000000000000014 /* GeneratedQueueSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedQueueSession.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A60000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000D /* MediaPlayer.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A70000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A70000000000000000000002 /* RediscoverShuffle */,
+				A70000000000000000000009 /* RediscoverShuffleTests */,
+				A7000000000000000000000A /* Frameworks */,
+				A7000000000000000000000B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A70000000000000000000002 /* RediscoverShuffle */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* RediscoverShuffleApp.swift */,
+				A70000000000000000000003 /* Models */,
+				A70000000000000000000004 /* Services */,
+				A70000000000000000000005 /* Shuffle */,
+				A70000000000000000000006 /* ViewModels */,
+				A70000000000000000000007 /* Views */,
+				A70000000000000000000008 /* Resources */,
+			);
+			path = RediscoverShuffle;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000003 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000002 /* LibraryModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000004 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000004 /* MusicLibraryService.swift */,
+				A20000000000000000000005 /* MusicPlaybackService.swift */,
+				A20000000000000000000012 /* PinnedPlaylistStore.swift */,
+				A20000000000000000000014 /* GeneratedQueueSession.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000005 /* Shuffle */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000003 /* WeightedShuffleEngine.swift */,
+			);
+			path = Shuffle;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000006 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000006 /* PlaylistViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000007 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000007 /* RootView.swift */,
+				A20000000000000000000008 /* PermissionView.swift */,
+				A20000000000000000000009 /* PlaylistBrowserView.swift */,
+				A2000000000000000000000A /* PlaylistDetailView.swift */,
+				A2000000000000000000000B /* QueuePreviewView.swift */,
+				A2000000000000000000000C /* Components.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000008 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000F /* Info.plist */,
+				A20000000000000000000013 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A70000000000000000000009 /* RediscoverShuffleTests */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000D /* WeightedShuffleEngineTests.swift */,
+			);
+			path = RediscoverShuffleTests;
+			sourceTree = "<group>";
+		};
+		A7000000000000000000000A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000E /* MediaPlayer.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A7000000000000000000000B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000010 /* RediscoverShuffle.app */,
+				A20000000000000000000011 /* RediscoverShuffleTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* RediscoverShuffle */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000002 /* Build configuration list for PBXNativeTarget "RediscoverShuffle" */;
+			buildPhases = (
+				A90000000000000000000001 /* Sources */,
+				A60000000000000000000001 /* Frameworks */,
+				AA0000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RediscoverShuffle;
+			productName = RediscoverShuffle;
+			productReference = A20000000000000000000010 /* RediscoverShuffle.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A50000000000000000000002 /* RediscoverShuffleTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000003 /* Build configuration list for PBXNativeTarget "RediscoverShuffleTests" */;
+			buildPhases = (
+				A90000000000000000000002 /* Sources */,
+				A60000000000000000000002 /* Frameworks */,
+				AA0000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB0000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = RediscoverShuffleTests;
+			productName = RediscoverShuffleTests;
+			productReference = A20000000000000000000011 /* RediscoverShuffleTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A40000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					A50000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					A50000000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A50000000000000000000001;
+					};
+				};
+			};
+			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXProject "RediscoverShuffle" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A70000000000000000000001;
+			productRefGroup = A7000000000000000000000B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A50000000000000000000001 /* RediscoverShuffle */,
+				A50000000000000000000002 /* RediscoverShuffleTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA0000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000010 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A90000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* RediscoverShuffleApp.swift in Sources */,
+				A10000000000000000000002 /* LibraryModels.swift in Sources */,
+				A10000000000000000000003 /* WeightedShuffleEngine.swift in Sources */,
+				A10000000000000000000004 /* MusicLibraryService.swift in Sources */,
+				A10000000000000000000005 /* MusicPlaybackService.swift in Sources */,
+				A10000000000000000000006 /* PlaylistViewModel.swift in Sources */,
+				A10000000000000000000007 /* RootView.swift in Sources */,
+				A10000000000000000000008 /* PermissionView.swift in Sources */,
+				A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */,
+				A1000000000000000000000A /* PlaylistDetailView.swift in Sources */,
+				A1000000000000000000000B /* QueuePreviewView.swift in Sources */,
+				A1000000000000000000000C /* Components.swift in Sources */,
+				A1000000000000000000000F /* PinnedPlaylistStore.swift in Sources */,
+				A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A90000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000E /* WeightedShuffleEngineTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AB0000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000000000000000000001 /* RediscoverShuffle */;
+			targetProxy = A30000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AC0000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AC0000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AC0000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7NJGQ2QUG3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RediscoverShuffle/Resources/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michael.RediscoverShuffle.a6a8c814;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AC0000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7NJGQ2QUG3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RediscoverShuffle/Resources/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michael.RediscoverShuffle.a6a8c814;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		AC0000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.RediscoverShuffleTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RediscoverShuffle.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RediscoverShuffle";
+			};
+			name = Debug;
+		};
+		AC0000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.RediscoverShuffleTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RediscoverShuffle.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RediscoverShuffle";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A80000000000000000000001 /* Build configuration list for PBXProject "RediscoverShuffle" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0000000000000000000001 /* Debug */,
+				AC0000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000000000000000000002 /* Build configuration list for PBXNativeTarget "RediscoverShuffle" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0000000000000000000003 /* Debug */,
+				AC0000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000000000000000000003 /* Build configuration list for PBXNativeTarget "RediscoverShuffleTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC0000000000000000000005 /* Debug */,
+				AC0000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A40000000000000000000001 /* Project object */;
+}
