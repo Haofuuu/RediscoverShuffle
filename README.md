@@ -18,7 +18,7 @@ pow(Double(p) + 1.0, -b)
 
 Each entry receives an exponential random key, `-log(U) / weight`, and the entries are ordered by ascending key. A lower play count raises the chance that an entry appears earlier, but it never turns the shuffle into a play-count sort. At strength 0 all entries have equal weight, which is an ordinary random shuffle.
 
-The generated queue belongs to the system Music player. Playback therefore continues through the Music app, Lock Screen, and Control Center after Rediscover Shuffle leaves the foreground. The app deliberately does not request background-audio capability.
+The generated queue belongs to the system Music player. Playback therefore continues through the Music app, Lock Screen, and Control Center after Rediscover Shuffle leaves the foreground. The app deliberately does not request background-audio capability. Rediscover Shuffle saves only the queue's opaque library identifiers, entry positions, and last validated playback position so the most recent queue can be reconstructed after relaunch; it never serializes `MPMediaItem` objects or song metadata.
 
 All music metadata and calculations remain on the phone. There is no networking, analytics, database, or server.
 
@@ -62,9 +62,11 @@ No MusicKit capability, App Service-enabled identifier, MusicKit developer token
 
 1. Grant Music access after reading the onboarding explanation.
 2. Search or browse the alphabetically sorted playlist list. Swipe right to pin a playlist above unpinned playlists. When two or more playlists are pinned, tap **Edit** and drag them into your preferred order. Pull to refresh or use the refresh button after changing the library.
-3. Select a playlist and adjust **Rediscovery Strength** through the six discrete levels from Normal (0) to Maximum (5).
+3. Select a playlist, choose a remembered song-list sort order—Default, play count low-to-high, play count high-to-low, or singer—and adjust **Rediscovery Strength** through the six discrete levels from Normal (0) to Maximum (5).
 4. Tap **Shuffle and Play** to generate the full queue and begin playback.
-5. Inspect the queue, reshuffle without changing the source playlist, or replay the displayed order. After navigating away, use **View Last Queue** on a playlist detail page to reopen the most recently generated order during the current app session. The now-playing card reflects the Music app without replacing its playback controls.
+5. Inspect the queue, reshuffle without changing the source playlist, or replay the displayed order. As Music advances, earlier entries move out of the visible list and the current song becomes position 1; going back restores earlier entries. **Play This Order** submits only the songs currently shown, so it never restarts songs that have already moved out of the list. After navigating away or quitting and reopening the app, use **View Last Queue** on a playlist detail page to reopen the most recently generated remaining order. The now-playing card reflects the Music app without replacing its playback controls.
+
+On relaunch, the saved order is rebuilt from the current authorized Music library. Entries removed from the source playlist cannot be reconstructed and are omitted. Because public `MediaPlayer` APIs do not expose a system-queue identifier, live progress is reattached only when Music's current queue index and item identifier match the saved order. Replacing or editing the queue in Music stops Rediscover Shuffle from advancing the saved display; it does not erase that display.
 
 The source playlist is never edited or replaced.
 
@@ -105,9 +107,11 @@ Connect the iPhone to the Mac, open the project in Xcode, select the phone, and 
 ## Project structure
 
 - `MusicLibraryService`: permission, playlist queries, stable identifiers, and library-change refreshes
-- `MusicPlaybackService`: system player queue, playback notifications, and current track
+- `MusicPlaybackService`: system player queue, playback notifications, current track, and duplicate-safe queue position
 - `PinnedPlaylistStore`: persistent pinned-playlist state and user-defined pinned order
-- `GeneratedQueueSession`: retains the most recently generated queue while the app is running
+- `GeneratedQueueSession`: persists lightweight queue identifiers and reconstructs the most recent queue after relaunch
+- `QueueProgress`: Apple-independent matching and remaining-order projection
+- `PlaylistSongSort`: deterministic playlist display sorting by source order, play count, or singer
 - `WeightedShuffleEngine`: pure weighted-permutation math with injectable randomness
 - `PlaylistViewModel`: maps distinct playlist entries into and out of the pure shuffle engine
 - SwiftUI views: permission, playlist browser, playlist detail, complete queue preview, and now-playing card
@@ -128,7 +132,12 @@ The simulator cannot supply a real on-device Music library or fully validate `sy
 - Accept and deny the Music permission once each; verify the app never shows a blank screen and that Open Settings works.
 - Confirm playlists added to the library appear, including an empty, one-song, cloud-only, and duplicate-entry playlist when available.
 - Confirm titles, artists, artwork, and play counts match Music.
+- Change the song-list sorting between Default, both play-count directions, and singer; leave and reopen a playlist and confirm the choice is remembered.
 - Generate several queues and confirm all playlist entries appear once and duplicates remain separate.
 - Start playback, leave the app, and use Music, Lock Screen, and Control Center; then return and confirm the now-playing state updated.
+- Let several songs advance and confirm earlier rows leave the visible queue, the current row moves to the top, and Back restores earlier rows.
+- After several songs advance, confirm the current row is numbered 1 and **Play This Order** starts from that remaining row without restoring earlier songs.
+- Quit and reopen Rediscover Shuffle while its Music queue is still active; confirm **View Last Queue** restores the order at the current duplicate-safe position.
+- Replace the queue in Music and confirm Rediscover Shuffle freezes the saved order instead of advancing it against unrelated playback.
 - Confirm the Music queue follows the preview order and ordinary Music shuffle remains off.
 - Try an unavailable song if one is present and confirm the rest of the queue can continue.

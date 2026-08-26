@@ -67,4 +67,5 @@ enum SettingsKeys {
     static let lastSelectedPlaylistID = "lastSelectedPlaylistPersistentID"
     static let hasShownOnboarding = "hasShownOnboarding"
     static let pinnedPlaylistIDs = "pinnedPlaylistPersistentIDs"
+    static let playlistSongSortOption = "playlistSongSortOption"
 }

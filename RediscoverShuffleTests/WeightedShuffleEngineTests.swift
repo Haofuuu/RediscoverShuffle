@@ -119,11 +119,101 @@ final class WeightedShuffleEngineTests: XCTestCase {
         XCTAssertEqual(candidates, originalSnapshot)
     }
 
+    func testQueueProgressUsesPlayerIndexForDuplicateSongOccurrences() {
+        let queue = [10, 20, 20, 30]
+
+        XCTAssertEqual(
+            QueueProgress.matchingPosition(
+                playerIndex: 2,
+                nowPlayingID: 20,
+                queueIDs: queue
+            ),
+            2
+        )
+    }
+
+    func testQueueProgressRejectsMismatchedOrInvalidPlayerPositions() {
+        let queue = [10, 20, 30]
+
+        XCTAssertNil(QueueProgress.matchingPosition(playerIndex: 1, nowPlayingID: 30, queueIDs: queue))
+        XCTAssertNil(QueueProgress.matchingPosition(playerIndex: -1, nowPlayingID: 10, queueIDs: queue))
+        XCTAssertNil(QueueProgress.matchingPosition(playerIndex: 3, nowPlayingID: 30, queueIDs: queue))
+    }
+
+    func testQueueProgressProjectsRemainingOrderWithoutMutation() {
+        let generatedOrder = ["first", "second", "third", "fourth"]
+
+        XCTAssertEqual(
+            QueueProgress.remainingItems(in: generatedOrder, from: 2),
+            ["third", "fourth"]
+        )
+        XCTAssertEqual(generatedOrder, ["first", "second", "third", "fourth"])
+    }
+
+    func testQueueProgressPreservesRawIndicesWhenRestoredEntriesAreMissing() {
+        XCTAssertEqual(
+            QueueProgress.displayProjections(
+                forVisibleEntries: [false, true, false, true]
+            ),
+            [
+                QueueProgressProjection(displayPosition: 0, isVisibleEntry: false),
+                QueueProgressProjection(displayPosition: 0, isVisibleEntry: true),
+                QueueProgressProjection(displayPosition: 1, isVisibleEntry: false),
+                QueueProgressProjection(displayPosition: 1, isVisibleEntry: true),
+            ]
+        )
+    }
+
+    func testPlaylistSongSortUsesBothPlayCountDirections() {
+        let songs = [
+            SortFixture(id: "high", originalIndex: 2, playCount: 9, artist: "B", title: "High"),
+            SortFixture(id: "low-second", originalIndex: 1, playCount: 1, artist: "C", title: "Low"),
+            SortFixture(id: "low-first", originalIndex: 0, playCount: 1, artist: "A", title: "Low"),
+        ]
+
+        XCTAssertEqual(sortedIDs(songs, by: .playsLowToHigh), ["low-first", "low-second", "high"])
+        XCTAssertEqual(sortedIDs(songs, by: .playsHighToLow), ["high", "low-first", "low-second"])
+    }
+
+    func testPlaylistSongSortUsesSingerThenTitleThenSourceOrder() {
+        let songs = [
+            SortFixture(id: "z", originalIndex: 3, playCount: 0, artist: "Zara", title: "One"),
+            SortFixture(id: "two", originalIndex: 2, playCount: 0, artist: "Amy", title: "Two"),
+            SortFixture(id: "one", originalIndex: 1, playCount: 0, artist: "Amy", title: "Two"),
+            SortFixture(id: "before", originalIndex: 0, playCount: 0, artist: "Amy", title: "Before"),
+        ]
+
+        XCTAssertEqual(sortedIDs(songs, by: .singers), ["before", "one", "two", "z"])
+    }
+
+    private func sortedIDs(
+        _ songs: [SortFixture],
+        by option: PlaylistSongSortOption
+    ) -> [String] {
+        option.sorted(songs) {
+            PlaylistSongSortValue(
+                originalIndex: $0.originalIndex,
+                playCount: $0.playCount,
+                artist: $0.artist,
+                title: $0.title
+            )
+        }
+        .map(\.id)
+    }
+
     private func makeCandidates(count: Int) -> [ShuffleCandidate<Int>] {
         (0 ..< count).map {
             ShuffleCandidate(id: $0, playCount: $0 * 3, originalIndex: $0)
         }
     }
+}
+
+private struct SortFixture {
+    let id: String
+    let originalIndex: Int
+    let playCount: Int
+    let artist: String
+    let title: String
 }
 
 private struct SequenceRandomNumberGenerator: RandomNumberGenerator {

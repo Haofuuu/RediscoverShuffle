@@ -6,6 +6,7 @@ struct PlaylistDetailView: View {
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @AppStorage(SettingsKeys.rediscoveryStrength) private var rediscoveryStrength = 1.0
     @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
+    @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultOrder.rawValue
     @StateObject private var viewModel: PlaylistViewModel
     @State private var showsQueue = false
     @State private var presentedQueueViewModel: PlaylistViewModel?
@@ -21,9 +22,12 @@ struct PlaylistDetailView: View {
 
                 Button {
                     viewModel.reshuffle(bias: normalizedStrength)
-                    generatedQueueSession.remember(viewModel)
+                    generatedQueueSession.markSubmittedForPlayback(viewModel)
                     presentedQueueViewModel = viewModel
-                    playbackService.setQueueAndPlay(entries: viewModel.generatedOrder)
+                    playbackService.setQueueAndPlay(
+                        entries: viewModel.generatedOrder,
+                        queueID: viewModel.queueID
+                    )
                     showsQueue = true
                 } label: {
                     CenteredActionLabel(title: "Shuffle and Play", systemImage: "shuffle")
@@ -48,7 +52,18 @@ struct PlaylistDetailView: View {
                         description: Text("This playlist has no songs to shuffle.")
                     )
                 } else {
-                    ForEach(viewModel.playlist.entries) { entry in
+                    Picker(
+                        selection: songSortBinding,
+                        label: Label("Sort Songs", systemImage: "arrow.up.arrow.down")
+                    ) {
+                        ForEach(PlaylistSongSortOption.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityHint("Changes the order of songs shown below and remembers the selection")
+
+                    ForEach(sortedPlaylistEntries) { entry in
                         SongRow(entry: entry)
                     }
                 }
@@ -75,6 +90,7 @@ struct PlaylistDetailView: View {
         .onAppear {
             lastSelectedPlaylistID = viewModel.playlist.persistentIDString
             rediscoveryStrength = normalizedStrength
+            songSortRawValue = songSortOption.rawValue
         }
         .navigationDestination(isPresented: $showsQueue) {
             if let presentedQueueViewModel {
@@ -182,6 +198,28 @@ struct PlaylistDetailView: View {
         case 3: return "Strong"
         case 4: return "Very Strong"
         default: return "Maximum"
+        }
+    }
+
+    private var songSortOption: PlaylistSongSortOption {
+        PlaylistSongSortOption(rawValue: songSortRawValue) ?? .defaultOrder
+    }
+
+    private var songSortBinding: Binding<PlaylistSongSortOption> {
+        Binding(
+            get: { songSortOption },
+            set: { songSortRawValue = $0.rawValue }
+        )
+    }
+
+    private var sortedPlaylistEntries: [PlaylistEntry] {
+        songSortOption.sorted(viewModel.playlist.entries) {
+            PlaylistSongSortValue(
+                originalIndex: $0.originalIndex,
+                playCount: $0.playCount,
+                artist: $0.artist,
+                title: $0.title
+            )
         }
     }
 }

@@ -56,14 +56,23 @@ struct SongRow: View {
 struct QueueSongRow: View {
     let entry: PlaylistEntry
     let queuePosition: Int
+    let isCurrent: Bool
     let isLowestPlayCount: Bool
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("\(queuePosition)")
-                .font(.body.monospacedDigit().weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 28, alignment: .trailing)
+            Group {
+                if isCurrent {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .foregroundStyle(.tint)
+                        .accessibilityHidden(true)
+                } else {
+                    Text("\(queuePosition)")
+                        .font(.body.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(minWidth: 28, alignment: .trailing)
 
             ArtworkView(artwork: entry.artwork, size: CGSize(width: 48, height: 48))
 
@@ -91,7 +100,7 @@ struct QueueSongRow: View {
         }
         .padding(.vertical, 8)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Queue position \(queuePosition), \(entry.title), by \(entry.artist), played \(entry.playCount) times\(isLowestPlayCount ? ", among the least played" : "")")
+        .accessibilityLabel("\(isCurrent ? "Currently playing at" : "Queue") position \(queuePosition), \(entry.title), by \(entry.artist), played \(entry.playCount) times\(isLowestPlayCount ? ", among the least played" : "")")
     }
 }
 
