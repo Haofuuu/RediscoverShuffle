@@ -12,15 +12,15 @@ struct PlaylistEntry: Identifiable {
     let originalIndex: Int
 
     var title: String {
-        nonempty(mediaItem.title) ?? "Unknown Title"
+        nonempty(mediaItem.title) ?? String(localized: "Unknown Title")
     }
 
     var artist: String {
-        nonempty(mediaItem.artist) ?? "Unknown Artist"
+        nonempty(mediaItem.artist) ?? String(localized: "Unknown Artist")
     }
 
     var albumTitle: String {
-        nonempty(mediaItem.albumTitle) ?? "Unknown Album"
+        nonempty(mediaItem.albumTitle) ?? String(localized: "Unknown Album")
     }
 
     var playCount: Int {
@@ -43,7 +43,12 @@ struct LibraryPlaylist: Identifiable {
     let id: MPMediaEntityPersistentID
     let name: String
     let entries: [PlaylistEntry]
-    let artwork: MPMediaItemArtwork?
+    /// Up to four artworks from distinct albums, used for the cover mosaic.
+    let coverArtworks: [MPMediaItemArtwork]
+
+    var artwork: MPMediaItemArtwork? {
+        coverArtworks.first
+    }
 
     var persistentIDString: String {
         String(id)
@@ -54,18 +59,4 @@ struct NowPlayingSnapshot {
     let title: String
     let artist: String
     let artwork: MPMediaItemArtwork?
-
-    static let empty = NowPlayingSnapshot(
-        title: "Nothing Playing",
-        artist: "Choose a playlist to begin",
-        artwork: nil
-    )
-}
-
-enum SettingsKeys {
-    static let rediscoveryStrength = "rediscoveryStrength"
-    static let lastSelectedPlaylistID = "lastSelectedPlaylistPersistentID"
-    static let hasShownOnboarding = "hasShownOnboarding"
-    static let pinnedPlaylistIDs = "pinnedPlaylistPersistentIDs"
-    static let playlistSongSortOption = "playlistSongSortOption"
 }

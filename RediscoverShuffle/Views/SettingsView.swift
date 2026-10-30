@@ -1,0 +1,226 @@
+import MediaPlayer
+import SwiftUI
+import UIKit
+
+struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var libraryService: MusicLibraryService
+    @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
+
+    @AppStorage(SettingsKeys.appearance) private var appearanceRawValue = AppAppearance.defaultValue.rawValue
+    @AppStorage(SettingsKeys.rediscoveryStrength) private var rediscoveryStrength = RediscoveryStrengthSetting.defaultValue
+    @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
+    @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
+
+    @State private var showsClearQueueConfirmation = false
+    @State private var showsClearQueueError = false
+
+    private let metadata = AppMetadata()
+
+    var body: some View {
+        Form {
+            Section("Appearance") {
+                Picker("Appearance", selection: appearanceBinding) {
+                    ForEach(AppAppearance.allCases) { appearance in
+                        Text(appearance.title).tag(appearance)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+
+            Section {
+                Picker(selection: strengthBinding) {
+                    ForEach(RediscoveryStrengthSetting.allowedValues, id: \.self) { value in
+                        Text(RediscoveryStrengthSetting.name(for: Double(value)))
+                            .tag(value)
+                    }
+                } label: {
+                    Label("Rediscovery", systemImage: "sparkles")
+                }
+                .pickerStyle(.navigationLink)
+                .accessibilityValue(RediscoveryStrengthSetting.name(for: normalizedStrength))
+
+                Picker(selection: songSortBinding) {
+                    ForEach(PlaylistSongSortOption.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                } label: {
+                    Label("Song Sort", systemImage: "arrow.up.arrow.down")
+                }
+                .pickerStyle(.navigationLink)
+
+                Toggle(isOn: $showPlayCounts) {
+                    Label("Show Play Counts", systemImage: "number")
+                }
+            } header: {
+                Text("Shuffle")
+            } footer: {
+                Text("Rediscovery decides how strongly less-played songs lead each new order.")
+            }
+
+            Section {
+                Button(action: openAppSettings) {
+                    HStack {
+                        Label("Language", systemImage: "globe")
+                        Spacer(minLength: 12)
+                        Image(systemName: "arrow.up.forward")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .foregroundStyle(.primary)
+                .accessibilityHint("Opens this app’s page in iOS Settings, where you can choose its language")
+            }
+
+            if libraryService.authorizationStatus != .authorized {
+                Section {
+                    LabeledContent {
+                        Text(musicAuthorizationDescription)
+                            .foregroundStyle(Color("SecondaryText"))
+                    } label: {
+                        Label("Music Library", systemImage: "music.note.list")
+                    }
+
+                    if libraryService.authorizationStatus == .denied
+                        || libraryService.authorizationStatus == .restricted {
+                        Button(action: openAppSettings) {
+                            Label("Open iOS Settings", systemImage: "gear")
+                        }
+                    }
+                } header: {
+                    Text("Music Access")
+                }
+            }
+
+            Section {
+                Button("Clear Saved Queue", role: .destructive) {
+                    showsClearQueueConfirmation = true
+                }
+                .frame(minHeight: 44)
+                .disabled(!generatedQueueSession.hasSavedQueue)
+                .accessibilityHint(
+                    generatedQueueSession.hasSavedQueue
+                        ? String(localized: "Asks for confirmation before removing Rediscover Shuffle's saved queue")
+                        : String(localized: "No saved Rediscover Shuffle queue is available")
+                )
+            } footer: {
+                Text("Music keeps playing, and your playlists are never changed.")
+            }
+
+            Section {
+                LabeledContent("Version", value: metadata.versionAndBuild)
+
+                Link(destination: Self.repositoryURL) {
+                    Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+            } header: {
+                Text("About")
+            } footer: {
+                Label {
+                    Text("Your library and every shuffle stay on this iPhone. No analytics, no servers.")
+                } icon: {
+                    Image(systemName: "lock.shield")
+                        .accessibilityHidden(true)
+                }
+                .padding(.top, 4)
+            }
+        }
+        .listSectionSpacing(24)
+        .textCase(nil)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
+        .confirmationDialog(
+            "Clear Saved Queue?",
+            isPresented: $showsClearQueueConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Clear Saved Queue", role: .destructive) {
+                showsClearQueueError = !generatedQueueSession.clearSavedQueue()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes the locally saved order and playback position. Apple Music will keep playing.")
+        }
+        .alert("Could Not Clear Saved Queue", isPresented: $showsClearQueueError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Rediscover Shuffle could not remove its saved queue file. Please try again.")
+        }
+    }
+
+    private var appearanceBinding: Binding<AppAppearance> {
+        Binding(
+            get: { AppAppearance.resolved(rawValue: appearanceRawValue) },
+            set: { appearanceRawValue = $0.rawValue }
+        )
+    }
+
+    private var normalizedStrength: Double {
+        RediscoveryStrengthSetting.normalized(rediscoveryStrength)
+    }
+
+    private var strengthBinding: Binding<Int> {
+        Binding(
+            get: { Int(normalizedStrength) },
+            set: { rediscoveryStrength = Double($0) }
+        )
+    }
+
+    private var songSortBinding: Binding<PlaylistSongSortOption> {
+        Binding(
+            get: { PlaylistSongSortOption.resolved(rawValue: songSortRawValue) },
+            set: { songSortRawValue = $0.rawValue }
+        )
+    }
+
+    private var musicAuthorizationDescription: String {
+        switch libraryService.authorizationStatus {
+        case .notDetermined: return String(localized: "Not Requested")
+        case .denied: return String(localized: "Denied")
+        case .restricted: return String(localized: "Restricted")
+        case .authorized: return String(localized: "Authorized")
+        @unknown default: return String(localized: "Unknown")
+        }
+    }
+
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+        openURL(url)
+    }
+
+    private static let repositoryURL = URL(string: "https://github.com/Haofuuu/RediscoverShuffle")!
+}
+
+private struct AppMetadata {
+    let versionAndBuild: String
+
+    init(bundle: Bundle = .main) {
+        let version = Self.nonempty(bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+            ?? String(localized: "Unknown")
+        let build = Self.nonempty(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
+            ?? String(localized: "Unknown")
+        versionAndBuild = "\(version) (\(build))"
+    }
+
+    private static func nonempty(_ value: String?) -> String? {
+        guard let value else {
+            return nil
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}

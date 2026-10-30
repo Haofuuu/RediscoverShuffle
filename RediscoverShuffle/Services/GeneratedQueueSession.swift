@@ -13,12 +13,18 @@ struct RestoredGeneratedQueue {
 @MainActor
 final class GeneratedQueueSession: ObservableObject {
     @Published private(set) var lastQueueViewModel: PlaylistViewModel?
+    @Published private(set) var hasSavedQueue: Bool
 
-    private let store = GeneratedQueueStore()
+    private let store: GeneratedQueueStore
     private var rememberedQueueID: UUID?
     private var submittedQueueID: UUID?
     private var persistedEntries: [StoredGeneratedQueue.Entry] = []
     private var lastPlayerIndex: Int?
+
+    init(store: GeneratedQueueStore = GeneratedQueueStore()) {
+        self.store = store
+        hasSavedQueue = store.hasSavedQueue
+    }
 
     func remember(_ viewModel: PlaylistViewModel) {
         guard !viewModel.generatedOrder.isEmpty else {
@@ -64,6 +70,25 @@ final class GeneratedQueueSession: ObservableObject {
 
         submittedQueueID = nil
         persist(viewModel)
+    }
+
+    /// Removes only Rediscover Shuffle's saved queue and its local progress.
+    /// The system Music player and the user's source playlist are untouched.
+    @discardableResult
+    func clearSavedQueue() -> Bool {
+        do {
+            try store.clear()
+        } catch {
+            return false
+        }
+
+        lastQueueViewModel = nil
+        rememberedQueueID = nil
+        submittedQueueID = nil
+        persistedEntries = []
+        lastPlayerIndex = nil
+        hasSavedQueue = false
+        return true
     }
 
     /// Rebuilds the saved queue from fresh MediaPlayer objects after the music
@@ -227,7 +252,9 @@ final class GeneratedQueueSession: ObservableObject {
             submittedQueueID: submittedQueueID,
             playbackPlayerIndex: lastPlayerIndex
         )
-        store.save(storedQueue)
+        if store.save(storedQueue) {
+            hasSavedQueue = true
+        }
     }
 
     private func storedEntries(
@@ -238,68 +265,6 @@ final class GeneratedQueueSession: ObservableObject {
                 originalIndex: $0.originalIndex,
                 mediaItemPersistentID: String($0.mediaItem.persistentID)
             )
-        }
-    }
-}
-
-private struct StoredGeneratedQueue: Codable {
-    static let currentSchemaVersion = 1
-
-    struct Entry: Codable {
-        let originalIndex: Int
-        let mediaItemPersistentID: String
-    }
-
-    let schemaVersion: Int
-    let queueID: UUID
-    let playlistPersistentID: String
-    let entries: [Entry]
-    let playbackPosition: Int?
-    let submittedQueueID: UUID?
-    let playbackPlayerIndex: Int?
-}
-
-private struct GeneratedQueueStore {
-    private let fileManager = FileManager.default
-
-    private var directoryURL: URL {
-        let applicationSupport = fileManager.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first ?? fileManager.temporaryDirectory
-        return applicationSupport.appendingPathComponent("RediscoverShuffle", isDirectory: true)
-    }
-
-    private var fileURL: URL {
-        directoryURL.appendingPathComponent("last-generated-queue.json")
-    }
-
-    func load() -> StoredGeneratedQueue? {
-        guard let data = try? Data(contentsOf: fileURL) else {
-            return nil
-        }
-        return try? JSONDecoder().decode(StoredGeneratedQueue.self, from: data)
-    }
-
-    func save(_ queue: StoredGeneratedQueue) {
-        guard let data = try? JSONEncoder().encode(queue) else {
-            return
-        }
-
-        do {
-            try fileManager.createDirectory(
-                at: directoryURL,
-                withIntermediateDirectories: true
-            )
-            try data.write(to: fileURL, options: .atomic)
-
-            var storedFileURL = fileURL
-            var resourceValues = URLResourceValues()
-            resourceValues.isExcludedFromBackup = true
-            try? storedFileURL.setResourceValues(resourceValues)
-        } catch {
-            // Persistence is a convenience; an I/O failure must never prevent
-            // queue generation or playback during the current session.
         }
     }
 }

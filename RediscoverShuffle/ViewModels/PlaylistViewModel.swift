@@ -9,6 +9,12 @@ final class PlaylistViewModel: ObservableObject {
 
     private(set) var queueID: UUID
 
+    /// How much of the playlist is unplayed or overlooked. The playlist is
+    /// immutable for the lifetime of this view model, so this is computed once.
+    private(set) lazy var rediscoveryInsight = RediscoveryInsight(
+        playCounts: playlist.entries.map(\.playCount)
+    )
+
     private let shuffleEngine = WeightedShuffleEngine()
 
     init(

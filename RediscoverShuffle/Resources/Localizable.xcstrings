@@ -1,0 +1,2292 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {},
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@, %lld out of 5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld out of 5"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，%2$lld/5"
+          }
+        }
+      }
+    },
+    "%@, among the least played" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，属于播放次数最少的歌曲"
+          }
+        }
+      }
+    },
+    "%@, by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, by %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，歌手 %2$@"
+          }
+        }
+      }
+    },
+    "%@, played %lld times" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, played %2$lld times"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，已播放 %2$lld 次"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld overlooked" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 首被忽略"
+          }
+        }
+      }
+    },
+    "%lld plays" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 次播放"
+          }
+        }
+      }
+    },
+    "%lld songs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 首歌曲"
+          }
+        }
+      }
+    },
+    "%lld unplayed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 首未播放"
+          }
+        }
+      }
+    },
+    "%lld · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld · %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "%lld, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld, %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld，%2$@"
+          }
+        }
+      }
+    },
+    ", " : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "，"
+          }
+        }
+      }
+    },
+    "0" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0"
+          }
+        }
+      }
+    },
+    "1 play" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 次播放"
+          }
+        }
+      }
+    },
+    "1 song" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 首歌曲"
+          }
+        }
+      }
+    },
+    "5" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5"
+          }
+        }
+      }
+    },
+    "About" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        }
+      }
+    },
+    "Add a playlist to your library in the Music app, then refresh here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先在“音乐”App 中将播放列表添加到资料库，然后在此刷新。"
+          }
+        }
+      }
+    },
+    "Add songs to this playlist in the Music app." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在“音乐” App 中向此播放列表添加歌曲。"
+          }
+        }
+      }
+    },
+    "All Playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有播放列表"
+          }
+        }
+      }
+    },
+    "All Songs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部歌曲"
+          }
+        }
+      }
+    },
+    "Allow Music access in Settings, then return here to browse your playlists." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“设置”中允许访问音乐，然后返回此处浏览您的播放列表。"
+          }
+        }
+      }
+    },
+    "Among the least played" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放次数最少的歌曲之一"
+          }
+        }
+      }
+    },
+    "An unknown error occurred." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发生未知错误。"
+          }
+        }
+      }
+    },
+    "App" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        }
+      }
+    },
+    "App Language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 语言"
+          }
+        }
+      }
+    },
+    "App Language, managed in iOS Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 语言，由 iOS 设置管理"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        }
+      }
+    },
+    "Asks for confirmation before removing Rediscover Shuffle's saved queue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先询问确认，再移除“重拾随机播放”保存的队列"
+          }
+        }
+      }
+    },
+    "Authorized" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已允许"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "Changes the order of songs shown below and remembers the selection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改下方歌曲的显示顺序，并记住此选择"
+          }
+        }
+      }
+    },
+    "Choose a playlist to begin" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个播放列表以开始"
+          }
+        }
+      }
+    },
+    "Choose one of your Music library playlists. Songs you have played less often will be more likely to appear early, while every result remains random." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择音乐资料库中的一个播放列表。播放次数较少的歌曲会更有可能较早出现，同时每次结果仍然是随机的。"
+          }
+        }
+      }
+    },
+    "Chooses how strongly less-played songs lead the order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择较少播放的歌曲在顺序中靠前的程度"
+          }
+        }
+      }
+    },
+    "Clear Saved Queue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除已保存的队列"
+          }
+        }
+      }
+    },
+    "Clear Saved Queue?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是否清除已保存的队列？"
+          }
+        }
+      }
+    },
+    "Clearing removes only Rediscover Shuffle's saved order and position. It does not stop Apple Music or modify the source playlist." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除操作只会移除“重拾随机播放”保存的顺序和位置，不会停止 Apple Music 播放或修改原播放列表。"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
+          }
+        }
+      }
+    },
+    "Could Not Clear Saved Queue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法清除已保存的队列"
+          }
+        }
+      }
+    },
+    "Creates a new order without changing what Music is playing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成新的顺序，不会改变“音乐”正在播放的内容"
+          }
+        }
+      }
+    },
+    "Creates a new weighted order and starts it in the Music app" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建新的加权顺序，并在“音乐”App 中开始播放"
+          }
+        }
+      }
+    },
+    "Creates another random order without starting playback" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建另一个随机顺序，但不开始播放"
+          }
+        }
+      }
+    },
+    "Current and Upcoming" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前歌曲及接下来"
+          }
+        }
+      }
+    },
+    "Currently playing at position %lld, %@, by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Currently playing at position %1$lld, %2$@, by %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前播放位置 %1$lld：%2$@，歌手 %3$@"
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
+          }
+        }
+      }
+    },
+    "Default Playlist Order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放列表默认顺序"
+          }
+        }
+      }
+    },
+    "Denied" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已拒绝"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
+    "Earlier songs move out of this list as Music advances. When this queue is active, going back brings them into the list again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随着“音乐”继续播放，之前的歌曲会移出此列表。此队列处于活动状态时，返回上一首会将这些歌曲重新放回列表中。"
+          }
+        }
+      }
+    },
+    "Empty" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空"
+          }
+        }
+      }
+    },
+    "Empty Playlist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空播放列表"
+          }
+        }
+      }
+    },
+    "Every available item in this generated order has been reached." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此生成顺序中的所有可用项目均已播放到。"
+          }
+        }
+      }
+    },
+    "Every song has an equal chance. A classic random shuffle." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每首歌曲的机会均等，采用普通随机播放。"
+          }
+        }
+      }
+    },
+    "Following Music" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随音乐 App"
+          }
+        }
+      }
+    },
+    "From %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自 %@"
+          }
+        }
+      }
+    },
+    "Generated Order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成的顺序"
+          }
+        }
+      }
+    },
+    "Gentle" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻柔"
+          }
+        }
+      }
+    },
+    "Get Started" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始使用"
+          }
+        }
+      }
+    },
+    "GitHub Repository" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 代码仓库"
+          }
+        }
+      }
+    },
+    "Give overlooked songs another chance" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再给被忽略的歌曲一次机会"
+          }
+        }
+      }
+    },
+    "Interrupted" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放已中断"
+          }
+        }
+      }
+    },
+    "Language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言"
+          }
+        }
+      }
+    },
+    "Last opened" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次打开"
+          }
+        }
+      }
+    },
+    "Less-played songs are more likely to come first. Every shuffle stays random." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "较少播放的歌曲更有机会排在前面，每次排列仍然是随机的。"
+          }
+        }
+      }
+    },
+    "Less-played songs lead the queue by" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "较少播放的歌曲靠前程度"
+          }
+        }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色"
+          }
+        }
+      }
+    },
+    "Loading playlists…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在载入播放列表…"
+          }
+        }
+      }
+    },
+    "Maximum" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大"
+          }
+        }
+      }
+    },
+    "Minimum iOS" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低 iOS 版本"
+          }
+        }
+      }
+    },
+    "Moderate" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "适中"
+          }
+        }
+      }
+    },
+    "Move Down" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下移"
+          }
+        }
+      }
+    },
+    "Move Up" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上移"
+          }
+        }
+      }
+    },
+    "Music Access" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐访问权限"
+          }
+        }
+      }
+    },
+    "Music Library" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐资料库"
+          }
+        }
+      }
+    },
+    "Music Library Problem" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐资料库出现问题"
+          }
+        }
+      }
+    },
+    "Music Permission" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐权限"
+          }
+        }
+      }
+    },
+    "Music access is restricted" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐访问受限"
+          }
+        }
+      }
+    },
+    "Music access is turned off" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐访问已关闭"
+          }
+        }
+      }
+    },
+    "Music access lets you browse the playlists in your library." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许访问音乐后，即可浏览资料库中的播放列表。"
+          }
+        }
+      }
+    },
+    "Music couldn’t start this queue." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“音乐”无法开始播放此队列。"
+          }
+        }
+      }
+    },
+    "Music couldn’t start this queue. A song in it may be unavailable." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“音乐”无法开始播放此队列。其中可能有歌曲不可用。"
+          }
+        }
+      }
+    },
+    "Music information and shuffle calculations remain on this iPhone. Rediscover Shuffle does not send library data to a server or use analytics." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐信息和随机播放计算均保留在这台 iPhone 上。“重拾随机播放”不会将资料库数据发送到服务器，也不使用分析功能。"
+          }
+        }
+      }
+    },
+    "Music keeps playing, and your playlists are never changed." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“音乐”会继续播放，你的播放列表也不会被更改。"
+          }
+        }
+      }
+    },
+    "Music library access is needed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要访问音乐资料库"
+          }
+        }
+      }
+    },
+    "NOW PLAYING" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在播放"
+          }
+        }
+      }
+    },
+    "Next Song" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一首"
+          }
+        }
+      }
+    },
+    "No Matches" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无匹配结果"
+          }
+        }
+      }
+    },
+    "No Playlists Found" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到播放列表"
+          }
+        }
+      }
+    },
+    "No playlist name contains “%@”." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有名称包含“%@”的播放列表。"
+          }
+        }
+      }
+    },
+    "No saved Rediscover Shuffle queue is available" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可用的“重拾随机播放”已保存队列"
+          }
+        }
+      }
+    },
+    "Normal" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标准"
+          }
+        }
+      }
+    },
+    "Not Requested" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未请求"
+          }
+        }
+      }
+    },
+    "Nothing Playing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无播放"
+          }
+        }
+      }
+    },
+    "Now Playing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在播放"
+          }
+        }
+      }
+    },
+    "Now playing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在播放"
+          }
+        }
+      }
+    },
+    "Now playing, %@, by %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now playing, %1$@, by %2$@, %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在播放：%1$@，歌手 %2$@，%3$@"
+          }
+        }
+      }
+    },
+    "Number %lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %lld 首"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
+    },
+    "One step left: allow Music access" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只差一步：允许访问音乐"
+          }
+        }
+      }
+    },
+    "Open Music" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“音乐”"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开设置"
+          }
+        }
+      }
+    },
+    "Open iOS Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 iOS 设置"
+          }
+        }
+      }
+    },
+    "Opens Rediscover Shuffle settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“重拾随机播放”的设置"
+          }
+        }
+      }
+    },
+    "Opens the previously generated Rediscovered Queue without changing its order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开之前生成的“重拾队列”，且不更改其顺序"
+          }
+        }
+      }
+    },
+    "Opens this app's page in Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开此 App 的设置页面"
+          }
+        }
+      }
+    },
+    "Opens this app's page in iOS Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开此 App 的 iOS 设置页面"
+          }
+        }
+      }
+    },
+    "Opens this app’s page in iOS Settings, where you can choose its language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开此 App 在 iOS“设置”中的页面，可在那里选择语言"
+          }
+        }
+      }
+    },
+    "Opens your most recent queue without changing its order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开最近的队列，不改变其顺序"
+          }
+        }
+      }
+    },
+    "Other Playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他播放列表"
+          }
+        }
+      }
+    },
+    "Overlooked" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "被忽略"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂停"
+          }
+        }
+      }
+    },
+    "Paused" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暂停"
+          }
+        }
+      }
+    },
+    "Pick a playlist and Rediscover Shuffle brings the songs you rarely play closer to the top. Every order is still random." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个播放列表，重拾随机播放会把你很少播放的歌曲排得更靠前。每次的顺序依然是随机的。"
+          }
+        }
+      }
+    },
+    "Pin Playlist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "置顶播放列表"
+          }
+        }
+      }
+    },
+    "Pinned" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已置顶"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放"
+          }
+        }
+      }
+    },
+    "Play This Order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按此顺序播放"
+          }
+        }
+      }
+    },
+    "Playback Defaults" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认播放设置"
+          }
+        }
+      }
+    },
+    "Playback Problem" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放出现问题"
+          }
+        }
+      }
+    },
+    "Playback state unavailable" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放状态不可用"
+          }
+        }
+      }
+    },
+    "Played %lld times" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已播放 %lld 次"
+          }
+        }
+      }
+    },
+    "Playing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在播放"
+          }
+        }
+      }
+    },
+    "Playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放列表"
+          }
+        }
+      }
+    },
+    "Plays the new order in the Music app" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“音乐” App 中播放新的顺序"
+          }
+        }
+      }
+    },
+    "Plays this order in the Music app" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“音乐” App 中播放此顺序"
+          }
+        }
+      }
+    },
+    "Plays: High to Low" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放次数：从多到少"
+          }
+        }
+      }
+    },
+    "Plays: Low to High" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放次数：从少到多"
+          }
+        }
+      }
+    },
+    "Preparing…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在准备…"
+          }
+        }
+      }
+    },
+    "Previous Song" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一首"
+          }
+        }
+      }
+    },
+    "Privacy" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私"
+          }
+        }
+      }
+    },
+    "Queue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放队列"
+          }
+        }
+      }
+    },
+    "Queue Complete" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "队列已完成"
+          }
+        }
+      }
+    },
+    "Queue position %lld, %@, by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Queue position %1$lld, %2$@, by %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "队列位置 %1$lld：%2$@，歌手 %3$@"
+          }
+        }
+      }
+    },
+    "Read play counts to weight the shuffle" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取播放次数来调整随机排序权重"
+          }
+        }
+      }
+    },
+    "Reads play counts to find overlooked songs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取播放次数以找出被忽略的歌曲"
+          }
+        }
+      }
+    },
+    "Rediscover Shuffle" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾随机播放"
+          }
+        }
+      }
+    },
+    "Rediscover Shuffle could not remove its saved queue file. Please try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“重拾随机播放”无法移除保存的队列文件。请再试一次。"
+          }
+        }
+      }
+    },
+    "Rediscovered Queue" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾队列"
+          }
+        }
+      }
+    },
+    "Rediscovery" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾"
+          }
+        }
+      }
+    },
+    "Rediscovery Strength" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾强度"
+          }
+        }
+      }
+    },
+    "Rediscovery decides how strongly less-played songs lead each new order." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“重拾”决定较少播放的歌曲在每个新顺序中靠前的程度。"
+          }
+        }
+      }
+    },
+    "Rediscovery strength" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾强度"
+          }
+        }
+      }
+    },
+    "Rediscovery: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾：%@"
+          }
+        }
+      }
+    },
+    "Refresh" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新"
+          }
+        }
+      }
+    },
+    "Refresh Playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新播放列表"
+          }
+        }
+      }
+    },
+    "Remaining Order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剩余顺序"
+          }
+        }
+      }
+    },
+    "Reshuffle" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新随机排序"
+          }
+        }
+      }
+    },
+    "Reshuffle creates a new saved order. Music changes only when you tap Play This Order." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新随机排列会保存新顺序。只有轻点“按此顺序播放”后，音乐 App 的播放才会改变。"
+          }
+        }
+      }
+    },
+    "Reshuffle to start a new order." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新随机排序以开始新的顺序。"
+          }
+        }
+      }
+    },
+    "Restricted" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受限制"
+          }
+        }
+      }
+    },
+    "Resume" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续播放"
+          }
+        }
+      }
+    },
+    "Saved Order" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存的顺序"
+          }
+        }
+      }
+    },
+    "Saved Queue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存的队列"
+          }
+        }
+      }
+    },
+    "Search playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索播放列表"
+          }
+        }
+      }
+    },
+    "Seeking backward" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在快退"
+          }
+        }
+      }
+    },
+    "Seeking forward" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在快进"
+          }
+        }
+      }
+    },
+    "Send the finished order to the Music app" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将完成的顺序发送到“音乐”App"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        }
+      }
+    },
+    "Show" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        }
+      }
+    },
+    "Show Play Counts" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示播放次数"
+          }
+        }
+      }
+    },
+    "Show playlists already in your library" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示资料库中已有的播放列表"
+          }
+        }
+      }
+    },
+    "Shows controls for reordering pinned playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示用于调整已置顶播放列表顺序的控件"
+          }
+        }
+      }
+    },
+    "Shows the player and what’s up next" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示播放器和接下来要播放的歌曲"
+          }
+        }
+      }
+    },
+    "Shows the playlists already in your library" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示你资料库中已有的播放列表"
+          }
+        }
+      }
+    },
+    "Shows the system prompt for Music library access" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示用于访问音乐资料库的系统提示"
+          }
+        }
+      }
+    },
+    "Shuffle" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随机排序"
+          }
+        }
+      }
+    },
+    "Shuffle and Play" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随机排序并播放"
+          }
+        }
+      }
+    },
+    "Singers: A to Z" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌手：A 到 Z"
+          }
+        }
+      }
+    },
+    "Skip Item and Continue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳过此项并继续"
+          }
+        }
+      }
+    },
+    "Skip Song and Continue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳过此歌曲并继续"
+          }
+        }
+      }
+    },
+    "Song %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Song %1$lld of %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 首，共 %2$lld 首"
+          }
+        }
+      }
+    },
+    "Song Sort" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲排序"
+          }
+        }
+      }
+    },
+    "Songs in Playlist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放列表中的歌曲"
+          }
+        }
+      }
+    },
+    "Songs you have played less often are more likely to appear earlier, but every shuffle remains random." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放次数较少的歌曲更有可能较早出现，但每次随机排序仍然是随机的。"
+          }
+        }
+      }
+    },
+    "Sort" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序"
+          }
+        }
+      }
+    },
+    "Sort Songs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序歌曲"
+          }
+        }
+      }
+    },
+    "Sorting changes this list, not your shuffle." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序仅影响此列表，不会改变随机播放顺序。"
+          }
+        }
+      }
+    },
+    "Source Code" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "源代码"
+          }
+        }
+      }
+    },
+    "Starting…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在开始…"
+          }
+        }
+      }
+    },
+    "Stopped" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停止"
+          }
+        }
+      }
+    },
+    "Strong" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "强"
+          }
+        }
+      }
+    },
+    "Swipe right or touch and hold to pin this playlist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右轻扫或长按可置顶此播放列表"
+          }
+        }
+      }
+    },
+    "Swipe right to pin this playlist" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右轻扫以置顶此播放列表"
+          }
+        }
+      }
+    },
+    "Swipe right to unpin this playlist. Use Edit to reorder pinned playlists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向右轻扫以取消置顶此播放列表。使用“编辑”重新排列已置顶的播放列表"
+          }
+        }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随系统"
+          }
+        }
+      }
+    },
+    "The Music app could not play this queue." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“音乐”App 无法播放此队列。"
+          }
+        }
+      }
+    },
+    "The Music app could not prepare this queue. One or more songs may be unavailable. %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“音乐”App 无法准备此队列。部分歌曲可能不可用。%@"
+          }
+        }
+      }
+    },
+    "These preferences also apply on playlist screens." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些偏好设置也会应用于播放列表页面。"
+          }
+        }
+      }
+    },
+    "This iPhone currently prevents access to the Music library. A device restriction or parental control may need to be changed." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这台 iPhone 当前禁止访问音乐资料库。您可能需要更改设备限制或家长控制。"
+          }
+        }
+      }
+    },
+    "This is the last song in the queue." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这是队列中的最后一首歌曲。"
+          }
+        }
+      }
+    },
+    "This page reports the current authorization state and never requests Music access automatically." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此页面显示当前授权状态，且绝不会自动请求音乐访问权限。"
+          }
+        }
+      }
+    },
+    "This playlist has no songs to play." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此播放列表中没有可播放的歌曲。"
+          }
+        }
+      }
+    },
+    "This playlist has no songs to shuffle." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此播放列表中没有可随机排序的歌曲。"
+          }
+        }
+      }
+    },
+    "This removes the locally saved order and playback position. Apple Music will keep playing." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这会移除本地保存的顺序和播放位置。Apple Music 将继续播放。"
+          }
+        }
+      }
+    },
+    "Touch and hold to unpin or move this playlist. Use Edit to drag pinned playlists." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长按可取消置顶或移动此播放列表。轻点“编辑”可拖动排列已置顶的播放列表。"
+          }
+        }
+      }
+    },
+    "Unknown" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        }
+      }
+    },
+    "Unknown Album" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知专辑"
+          }
+        }
+      }
+    },
+    "Unknown Artist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知歌手"
+          }
+        }
+      }
+    },
+    "Unknown Title" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知歌曲"
+          }
+        }
+      }
+    },
+    "Unpin Playlist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消置顶播放列表"
+          }
+        }
+      }
+    },
+    "Unplayed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未播放"
+          }
+        }
+      }
+    },
+    "Untitled Playlist" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未命名播放列表"
+          }
+        }
+      }
+    },
+    "Up Next" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接下来播放"
+          }
+        }
+      }
+    },
+    "Upcoming" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接下来"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
+          }
+        }
+      }
+    },
+    "Very Strong" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "很强"
+          }
+        }
+      }
+    },
+    "View Last Queue" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看上次队列"
+          }
+        }
+      }
+    },
+    "View last generated queue for %@, %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View last generated queue for %1$@, %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看为 %1$@ 生成的上次队列，共 %2$@"
+          }
+        }
+      }
+    },
+    "Waiting for permission…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在等待权限…"
+          }
+        }
+      }
+    },
+    "Your library and every shuffle stay on this iPhone. No analytics, no servers." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的资料库和每一次随机排序都只保留在这部 iPhone 上。没有分析，也没有服务器。"
+          }
+        }
+      }
+    },
+    "Your library information and shuffle calculations stay on this iPhone. The app does not use analytics or a server." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您的资料库信息和随机播放计算均保留在这台 iPhone 上。本 App 不使用分析功能或服务器。"
+          }
+        }
+      }
+    },
+    "iOS Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 设置"
+          }
+        }
+      }
+    },
+    "iOS manages language per app. Open this app's Settings page and choose Language when that option is available. iOS offers only languages translated by the app." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 会单独管理每个 App 的语言。打开此 App 的“设置”页面，并在“语言”选项可用时进行选择。iOS 只会提供 App 已翻译的语言。"
+          }
+        }
+      }
+    },
+    "last opened" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次打开"
+          }
+        }
+      }
+    },
+    "pinned" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已置顶"
+          }
+        }
+      }
+    },
+    "plays" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次"
+          }
+        }
+      }
+    },
+    "•" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "•"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

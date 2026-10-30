@@ -9,11 +9,14 @@ final class MusicLibraryService: ObservableObject {
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
-    private let mediaLibrary = MPMediaLibrary.default()
+    private lazy var mediaLibrary = MPMediaLibrary.default()
     private var libraryChangeObserver: NSObjectProtocol?
 
     init() {
         authorizationStatus = MPMediaLibrary.authorizationStatus()
+    }
+
+    private func startObservingLibrary() {
         mediaLibrary.beginGeneratingLibraryChangeNotifications()
         libraryChangeObserver = NotificationCenter.default.addObserver(
             forName: .MPMediaLibraryDidChange,
@@ -29,8 +32,10 @@ final class MusicLibraryService: ObservableObject {
     deinit {
         if let libraryChangeObserver {
             NotificationCenter.default.removeObserver(libraryChangeObserver)
+            Task { @MainActor in
+                MPMediaLibrary.default().endGeneratingLibraryChangeNotifications()
+            }
         }
-        mediaLibrary.endGeneratingLibraryChangeNotifications()
     }
 
     func synchronizeAuthorizationAndLoad() {
@@ -72,6 +77,9 @@ final class MusicLibraryService: ObservableObject {
         }
 
         authorizationStatus = .authorized
+        if libraryChangeObserver == nil {
+            startObservingLibrary()
+        }
         isLoading = true
         errorMessage = nil
 
@@ -105,10 +113,32 @@ final class MusicLibraryService: ObservableObject {
         }
 
         let trimmedName = playlist.name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = trimmedName.flatMap { $0.isEmpty ? nil : $0 } ?? "Untitled Playlist"
-        let artwork = items.first(where: { $0.artwork != nil })?.artwork
+        let name = trimmedName.flatMap { $0.isEmpty ? nil : $0 }
+            ?? String(localized: "Untitled Playlist")
+        return LibraryPlaylist(
+            id: playlistID,
+            name: name,
+            entries: entries,
+            coverArtworks: coverArtworks(from: items)
+        )
+    }
 
-        return LibraryPlaylist(id: playlistID, name: name, entries: entries, artwork: artwork)
+    /// Picks artwork from up to four different albums, scanning only the start
+    /// of long playlists so large libraries stay fast to load.
+    private static func coverArtworks(from items: [MPMediaItem]) -> [MPMediaItemArtwork] {
+        var seenAlbumIDs = Set<MPMediaEntityPersistentID>()
+        var artworks: [MPMediaItemArtwork] = []
+        for item in items.prefix(60) {
+            guard let artwork = item.artwork,
+                  seenAlbumIDs.insert(item.albumPersistentID).inserted else {
+                continue
+            }
+            artworks.append(artwork)
+            if artworks.count == 4 {
+                break
+            }
+        }
+        return artworks
     }
 
     private func reconcileStoredPlaylistSelection() {

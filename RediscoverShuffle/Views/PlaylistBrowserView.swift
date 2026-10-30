@@ -4,8 +4,11 @@ struct PlaylistBrowserView: View {
     @Environment(\.editMode) private var editMode
     @EnvironmentObject private var libraryService: MusicLibraryService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
+    @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
     @State private var searchText = ""
+    @State private var showsSettings = false
+    @State private var showsSavedQueue = false
 
     private var trimmedSearch: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -51,28 +54,44 @@ struct PlaylistBrowserView: View {
             } else if libraryService.playlists.isEmpty {
                 EmptyStateView(
                     symbol: "music.note.list",
-                    title: "No Playlists Found",
-                    message: "Add a playlist to your library in the Music app, then refresh here.",
-                    actionTitle: "Refresh",
+                    title: String(localized: "No Playlists Found"),
+                    message: String(localized: "Add a playlist to your library in the Music app, then refresh here."),
+                    actionTitle: String(localized: "Refresh"),
                     action: libraryService.refreshPlaylists
                 )
             } else if matchingPlaylists.isEmpty {
                 EmptyStateView(
                     symbol: "magnifyingglass",
-                    title: "No Matches",
-                    message: "No playlist name contains “\(searchText)”.",
+                    title: String(localized: "No Matches"),
+                    message: String(
+                        format: String(localized: "No playlist name contains “%@”."),
+                        locale: .current,
+                        searchText
+                    ),
                     actionTitle: nil,
                     action: nil
                 )
             } else {
                 List {
+                    if trimmedSearch.isEmpty,
+                       let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
+                        ContinueQueueCard(viewModel: lastQueueViewModel) {
+                            showsSavedQueue = true
+                        }
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+
                     if !pinnedPlaylists.isEmpty {
-                        Section("Pinned") {
+                        Section {
                             ForEach(pinnedPlaylists) { playlist in
                                 playlistLink(for: playlist)
                             }
                             .onMove(perform: movePinnedPlaylists)
                             .moveDisabled(!canReorderPinnedPlaylists)
+                        } header: {
+                            sectionTitle(String(localized: "Pinned"))
                         }
                     }
 
@@ -83,19 +102,21 @@ struct PlaylistBrowserView: View {
                             }
                         } header: {
                             if !pinnedPlaylists.isEmpty {
-                                Text("Other Playlists")
+                                sectionTitle(String(localized: "All Playlists"))
                             }
                         }
                     }
                 }
                 .listStyle(.plain)
+                .scrollContentBackground(.hidden)
                 .refreshable {
                     libraryService.refreshPlaylists()
                 }
             }
         }
+        .background(Color(.systemBackground))
         .navigationTitle("Playlists")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText, prompt: "Search playlists")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -108,11 +129,21 @@ struct PlaylistBrowserView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    libraryService.refreshPlaylists()
+                    showsSettings = true
                 } label: {
-                    Label("Refresh Playlists", systemImage: "arrow.clockwise")
+                    Label("Settings", systemImage: "gearshape")
                 }
-                .disabled(libraryService.isLoading)
+                .accessibilityHint("Opens Rediscover Shuffle settings")
+            }
+        }
+        .sheet(isPresented: $showsSettings) {
+            NavigationStack {
+                SettingsView()
+            }
+        }
+        .navigationDestination(isPresented: $showsSavedQueue) {
+            if let savedQueue = generatedQueueSession.lastQueueViewModel {
+                PlaylistDetailView(playlist: savedQueue.playlist, savedQueue: savedQueue)
             }
         }
         .onChange(of: searchText) { _, newValue in
@@ -130,7 +161,7 @@ struct PlaylistBrowserView: View {
                 libraryService.errorMessage = nil
             }
         } message: {
-            Text(libraryService.errorMessage ?? "An unknown error occurred.")
+            Text(libraryService.errorMessage ?? String(localized: "An unknown error occurred."))
         }
     }
 
@@ -152,9 +183,22 @@ struct PlaylistBrowserView: View {
         return comparison == .orderedAscending
     }
 
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.title3.bold())
+            .foregroundStyle(Color.primary)
+            .textCase(nil)
+            .accessibilityAddTraits(.isHeader)
+    }
+
     private func playlistLink(for playlist: LibraryPlaylist) -> some View {
         NavigationLink {
-            PlaylistDetailView(playlist: playlist)
+            PlaylistDetailView(
+                playlist: playlist,
+                savedQueue: generatedQueueSession.lastQueueViewModel.flatMap {
+                    $0.playlist.id == playlist.id ? $0 : nil
+                }
+            )
         } label: {
             PlaylistRow(
                 playlist: playlist,
@@ -162,9 +206,23 @@ struct PlaylistBrowserView: View {
                 isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString)
             )
         }
-        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        .listRowBackground(Color.clear)
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             pinButton(for: playlist)
+        }
+        .contextMenu {
+            pinButton(for: playlist)
+            if canReorderPinnedPlaylists,
+               let index = availablePinnedPlaylists.firstIndex(where: { $0.id == playlist.id }) {
+                Button("Move Up", systemImage: "arrow.up") {
+                    movePinnedPlaylists(from: IndexSet(integer: index), to: index - 1)
+                }
+                .disabled(index == 0)
+                Button("Move Down", systemImage: "arrow.down") {
+                    movePinnedPlaylists(from: IndexSet(integer: index), to: index + 2)
+                }
+                .disabled(index == availablePinnedPlaylists.count - 1)
+            }
         }
     }
 
@@ -184,63 +242,170 @@ struct PlaylistBrowserView: View {
             pinnedPlaylistStore.toggle(playlist.persistentIDString)
         } label: {
             Label(
-                isPinned ? "Unpin Playlist" : "Pin Playlist",
+                isPinned
+                    ? String(localized: "Unpin Playlist")
+                    : String(localized: "Pin Playlist"),
                 systemImage: isPinned ? "pin.slash" : "pin.fill"
             )
         }
-        .tint(isPinned ? .gray : .orange)
+        .tint(Color("AccentColor"))
     }
 }
 
 private struct PlaylistRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let playlist: LibraryPlaylist
     let isLastSelected: Bool
     let isPinned: Bool
 
-    private var songCountText: String {
-        "\(playlist.entries.count) \(playlist.entries.count == 1 ? "song" : "songs")"
+    private var isEmpty: Bool {
+        playlist.entries.isEmpty
+    }
+
+    private var detailText: String {
+        let count = isEmpty ? String(localized: "Empty") : localizedSongCount(playlist.entries.count)
+        guard isLastSelected else {
+            return count
+        }
+        return String(
+            format: String(localized: "%@ · %@"),
+            locale: .current,
+            count,
+            String(localized: "Last opened")
+        )
+    }
+
+    private var playlistAccessibilityLabel: String {
+        var parts = [playlist.name, isEmpty ? String(localized: "Empty") : localizedSongCount(playlist.entries.count)]
+        if isPinned {
+            parts.append(String(localized: "pinned"))
+        }
+        if isLastSelected {
+            parts.append(String(localized: "last opened"))
+        }
+        return parts.joined(separator: String(localized: ", "))
+    }
+
+    private var playlistAccessibilityHint: String {
+        if isPinned {
+            return String(localized: "Touch and hold to unpin or move this playlist. Use Edit to drag pinned playlists.")
+        }
+        return String(localized: "Swipe right or touch and hold to pin this playlist")
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            ArtworkView(artwork: playlist.artwork, size: CGSize(width: 58, height: 58))
+        HStack(spacing: 14) {
+            PlaylistArtworkView(playlist: playlist, size: 56)
+                .opacity(isEmpty ? 0.55 : 1)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(playlist.name)
-                    .font(.headline)
-                    .lineLimit(2)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(isEmpty ? Color("SecondaryText") : Color.primary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
 
-                HStack(spacing: 6) {
-                    Text(songCountText)
-                        .foregroundStyle(.secondary)
-
-                    if isLastSelected {
-                        Text("•")
-                            .foregroundStyle(.tertiary)
-                            .accessibilityHidden(true)
-
-                        HStack(spacing: 3) {
-                            Image(systemName: "clock")
-                            Text("Last opened")
-                        }
-                        .foregroundStyle(.tint)
-                    }
-                }
-                .font(.subheadline)
-                .lineLimit(1)
+                Text(detailText)
+                    .font(.subheadline)
+                    .foregroundStyle(Color("SecondaryText"))
             }
 
             Spacer(minLength: 8)
 
             if isPinned {
                 Image(systemName: "pin.fill")
-                    .foregroundStyle(.tint)
+                    .font(.footnote)
+                    .foregroundStyle(Color("AccentColor"))
                     .accessibilityHidden(true)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(playlist.name), \(songCountText)\(isPinned ? ", pinned" : "")\(isLastSelected ? ", last opened" : "")")
-        .accessibilityHint("Swipe right to \(isPinned ? "unpin" : "pin") this playlist\(isPinned ? ". Use Edit to reorder pinned playlists" : "")")
+        .accessibilityLabel(playlistAccessibilityLabel)
+        .accessibilityHint(playlistAccessibilityHint)
+    }
+}
+
+/// Entry point back into the most recent queue, showing where listening
+/// left off.
+private struct ContinueQueueCard: View {
+    @EnvironmentObject private var playbackService: MusicPlaybackService
+    @ObservedObject var viewModel: PlaylistViewModel
+    let open: () -> Void
+
+    private var isLive: Bool {
+        playbackService.generatedQueueProgress?.queueID == viewModel.queueID
+    }
+
+    private var progressFraction: Double? {
+        guard let position = viewModel.playbackPosition, !viewModel.generatedOrder.isEmpty else {
+            return nil
+        }
+        return Double(position + 1) / Double(viewModel.generatedOrder.count)
+    }
+
+    private var detailText: String {
+        guard let position = viewModel.playbackPosition, !viewModel.generatedOrder.isEmpty else {
+            return localizedSongCount(viewModel.generatedOrder.count)
+        }
+        return String(
+            format: String(localized: "Song %lld of %lld"),
+            locale: .current,
+            Int64(min(position + 1, viewModel.generatedOrder.count)),
+            Int64(viewModel.generatedOrder.count)
+        )
+    }
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 14) {
+                PlaylistArtworkView(playlist: viewModel.playlist, size: 64)
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 5) {
+                        if isLive {
+                            NowPlayingIndicator(isPlaying: playbackService.isPlaying)
+                                .font(.caption.weight(.bold))
+                        }
+                        Text(isLive ? String(localized: "Now Playing") : String(localized: "Continue"))
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color("AccentColor"))
+                            .textCase(.uppercase)
+                    }
+                    Text(viewModel.playlist.name)
+                        .font(.headline)
+                        .foregroundStyle(Color.primary)
+                        .lineLimit(1)
+                    Text(detailText)
+                        .font(.subheadline)
+                        .foregroundStyle(Color("SecondaryText"))
+                    if let progressFraction {
+                        ProgressView(value: progressFraction)
+                            .tint(Color("AccentColor"))
+                            .padding(.top, 2)
+                    }
+                }
+
+                Spacer(minLength: 4)
+
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(14)
+            .background {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+                    .overlay {
+                        ArtworkGlowBackground(color: ArtworkPalette.averageColor(of: viewModel.playlist.artwork))
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens your most recent queue without changing its order")
     }
 }
