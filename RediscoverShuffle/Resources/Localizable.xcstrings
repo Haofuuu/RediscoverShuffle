@@ -1,7 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {},
+    "%@ of %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已播放 %1$@，共 %2$@"
+          }
+        }
+      }
+    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
@@ -19,6 +28,7 @@
       }
     },
     "%@, %lld out of 5" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -35,6 +45,7 @@
       }
     },
     "%@, among the least played" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -61,6 +72,7 @@
       }
     },
     "%@, played %lld times" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -127,6 +139,7 @@
       }
     },
     "%lld · %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -143,6 +156,7 @@
       }
     },
     "%lld, %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -169,6 +183,7 @@
       }
     },
     "0" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -199,6 +214,7 @@
       }
     },
     "5" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -290,6 +306,7 @@
       }
     },
     "App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -300,6 +317,7 @@
       }
     },
     "App Language" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -310,6 +328,7 @@
       }
     },
     "App Language, managed in iOS Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -360,6 +379,7 @@
       }
     },
     "Changes the order of songs shown below and remembers the selection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -370,6 +390,7 @@
       }
     },
     "Choose a playlist to begin" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -380,6 +401,7 @@
       }
     },
     "Choose one of your Music library playlists. Songs you have played less often will be more likely to appear early, while every result remains random." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -420,6 +442,7 @@
       }
     },
     "Clearing removes only Rediscover Shuffle's saved order and position. It does not stop Apple Music or modify the source playlist." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -435,6 +458,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "继续"
+          }
+        }
+      }
+    },
+    "Continue from song %lld of %lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从第 %1$lld 首继续，共 %2$lld 首"
           }
         }
       }
@@ -460,6 +493,7 @@
       }
     },
     "Creates a new weighted order and starts it in the Music app" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -470,6 +504,7 @@
       }
     },
     "Creates another random order without starting playback" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -480,6 +515,7 @@
       }
     },
     "Current and Upcoming" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -490,6 +526,7 @@
       }
     },
     "Currently playing at position %lld, %@, by %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -556,6 +593,7 @@
       }
     },
     "Earlier songs move out of this list as Music advances. When this queue is active, going back brings them into the list again." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -586,6 +624,7 @@
       }
     },
     "Every available item in this generated order has been reached." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -596,6 +635,7 @@
       }
     },
     "Every song has an equal chance. A classic random shuffle." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -606,6 +646,7 @@
       }
     },
     "Following Music" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -626,6 +667,7 @@
       }
     },
     "Generated Order" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -656,6 +698,7 @@
       }
     },
     "GitHub Repository" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -706,6 +749,7 @@
       }
     },
     "Less-played songs are more likely to come first. Every shuffle stays random." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -756,6 +800,7 @@
       }
     },
     "Minimum iOS" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -826,6 +871,7 @@
       }
     },
     "Music Permission" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -856,6 +902,7 @@
       }
     },
     "Music access lets you browse the playlists in your library." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -886,6 +933,7 @@
       }
     },
     "Music information and shuffle calculations remain on this iPhone. Rediscover Shuffle does not send library data to a server or use analytics." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -906,6 +954,7 @@
       }
     },
     "Music library access is needed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -977,6 +1026,7 @@
       }
     },
     "Normal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -997,6 +1047,7 @@
       }
     },
     "Nothing Playing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1027,6 +1078,7 @@
       }
     },
     "Now playing, %@, by %@, %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1123,6 +1175,7 @@
       }
     },
     "Opens the previously generated Rediscovered Queue without changing its order" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1143,6 +1196,7 @@
       }
     },
     "Opens this app's page in iOS Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1173,6 +1227,7 @@
       }
     },
     "Other Playlists" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1253,6 +1308,7 @@
       }
     },
     "Play This Order" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1263,11 +1319,22 @@
       }
     },
     "Playback Defaults" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "默认播放设置"
+          }
+        }
+      }
+    },
+    "Playback Position" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放进度"
           }
         }
       }
@@ -1293,6 +1360,7 @@
       }
     },
     "Played %lld times" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1363,6 +1431,7 @@
       }
     },
     "Preparing…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1383,6 +1452,7 @@
       }
     },
     "Privacy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1393,6 +1463,7 @@
       }
     },
     "Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1413,6 +1484,7 @@
       }
     },
     "Queue position %lld, %@, by %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1429,6 +1501,7 @@
       }
     },
     "Read play counts to weight the shuffle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1449,6 +1522,7 @@
       }
     },
     "Rediscover Shuffle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1490,6 +1564,7 @@
       }
     },
     "Rediscovery Strength" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1540,6 +1615,7 @@
       }
     },
     "Refresh Playlists" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1550,6 +1626,7 @@
       }
     },
     "Remaining Order" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1570,6 +1647,7 @@
       }
     },
     "Reshuffle creates a new saved order. Music changes only when you tap Play This Order." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1610,6 +1688,7 @@
       }
     },
     "Saved Order" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1620,6 +1699,7 @@
       }
     },
     "Saved Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1660,6 +1740,7 @@
       }
     },
     "Send the finished order to the Music app" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1700,6 +1781,7 @@
       }
     },
     "Show playlists already in your library" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1760,6 +1842,7 @@
       }
     },
     "Shuffle and Play" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1780,6 +1863,7 @@
       }
     },
     "Skip Item and Continue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1826,6 +1910,7 @@
       }
     },
     "Songs in Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1847,6 +1932,7 @@
       }
     },
     "Sort" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1867,6 +1953,7 @@
       }
     },
     "Sorting changes this list, not your shuffle." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1959,6 +2046,7 @@
       }
     },
     "The Music app could not play this queue." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1969,6 +2057,7 @@
       }
     },
     "The Music app could not prepare this queue. One or more songs may be unavailable. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1979,6 +2068,7 @@
       }
     },
     "These preferences also apply on playlist screens." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2030,6 +2120,7 @@
       }
     },
     "This playlist has no songs to shuffle." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2140,6 +2231,7 @@
       }
     },
     "Upcoming" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2170,6 +2262,7 @@
       }
     },
     "View Last Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2217,6 +2310,7 @@
       }
     },
     "Your library information and shuffle calculations stay on this iPhone. The app does not use analytics or a server." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2227,6 +2321,7 @@
       }
     },
     "iOS Settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2237,6 +2332,7 @@
       }
     },
     "iOS manages language per app. Open this app's Settings page and choose Language when that option is available. iOS offers only languages translated by the app." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2267,6 +2363,7 @@
       }
     },
     "plays" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

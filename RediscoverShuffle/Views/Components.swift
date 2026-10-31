@@ -1,5 +1,3 @@
-import CoreImage
-import CoreImage.CIFilterBuiltins
 import MediaPlayer
 import SwiftUI
 import UIKit
@@ -15,6 +13,7 @@ enum ActionButtonProminence {
 /// stays subtle: a 0.97 scale, or an opacity change when Reduce Motion is on.
 struct PrimaryActionButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.screenTheme) private var theme
     var prominence: ActionButtonProminence = .filled
 
     func makeBody(configuration: Configuration) -> some View {
@@ -31,15 +30,15 @@ struct PrimaryActionButtonStyle: ButtonStyle {
 
     private var foreground: Color {
         switch prominence {
-        case .filled: Color("AccentForeground")
-        case .tinted: Color("AccentColor")
+        case .filled: theme.onAccent
+        case .tinted: theme.accentText
         }
     }
 
     private var background: Color {
         switch prominence {
-        case .filled: Color("AccentColor")
-        case .tinted: Color("AccentColor").opacity(0.13)
+        case .filled: theme.accent
+        case .tinted: theme.accent.opacity(0.16)
         }
     }
 }
@@ -75,6 +74,31 @@ extension Animation {
 extension View {
     func pressFeedback(isPressed: Bool) -> some View {
         modifier(PressFeedbackModifier(isPressed: isPressed))
+    }
+}
+
+// MARK: - Transitions
+
+extension View {
+    /// Marks the view a zoom transition grows from. Zoom transitions need
+    /// iOS 18; earlier versions keep the standard push or sheet.
+    @ViewBuilder
+    func zoomSource(id: some Hashable, in namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            matchedTransitionSource(id: id, in: namespace)
+        } else {
+            self
+        }
+    }
+
+    /// Presents this screen by zooming out of the matching `zoomSource`.
+    @ViewBuilder
+    func zoomTransition(from id: some Hashable, in namespace: Namespace.ID) -> some View {
+        if #available(iOS 18.0, *) {
+            navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            self
+        }
     }
 }
 
@@ -163,20 +187,26 @@ struct GeneratedCoverView: View {
     let seed: UInt64
     let size: CGFloat
 
-    private static let palettes: [(Color, Color)] = [
-        (Color(red: 0.86, green: 0.31, blue: 0.33), Color(red: 0.42, green: 0.10, blue: 0.20)),
-        (Color(red: 0.55, green: 0.38, blue: 0.80), Color(red: 0.22, green: 0.13, blue: 0.42)),
-        (Color(red: 0.30, green: 0.47, blue: 0.82), Color(red: 0.10, green: 0.18, blue: 0.40)),
-        (Color(red: 0.22, green: 0.62, blue: 0.60), Color(red: 0.06, green: 0.26, blue: 0.30)),
-        (Color(red: 0.90, green: 0.58, blue: 0.28), Color(red: 0.50, green: 0.20, blue: 0.12)),
-        (Color(red: 0.45, green: 0.50, blue: 0.58), Color(red: 0.16, green: 0.18, blue: 0.24)),
+    private static let palettes: [(PaletteColor, PaletteColor)] = [
+        (PaletteColor(red: 0.86, green: 0.31, blue: 0.33), PaletteColor(red: 0.42, green: 0.10, blue: 0.20)),
+        (PaletteColor(red: 0.55, green: 0.38, blue: 0.80), PaletteColor(red: 0.22, green: 0.13, blue: 0.42)),
+        (PaletteColor(red: 0.30, green: 0.47, blue: 0.82), PaletteColor(red: 0.10, green: 0.18, blue: 0.40)),
+        (PaletteColor(red: 0.22, green: 0.62, blue: 0.60), PaletteColor(red: 0.06, green: 0.26, blue: 0.30)),
+        (PaletteColor(red: 0.90, green: 0.58, blue: 0.28), PaletteColor(red: 0.50, green: 0.20, blue: 0.12)),
+        (PaletteColor(red: 0.45, green: 0.50, blue: 0.58), PaletteColor(red: 0.16, green: 0.18, blue: 0.24)),
     ]
 
-    var body: some View {
+    /// The two colours of a generated cover, so its playlist screen can wear
+    /// the same palette.
+    static func colors(for seed: UInt64) -> [PaletteColor] {
         let mixed = (seed ^ (seed >> 29)) &* 0x9E37_79B9_7F4A_7C15
-        let palette = Self.palettes[Int(mixed % UInt64(Self.palettes.count))]
+        let palette = palettes[Int(mixed % UInt64(palettes.count))]
+        return [palette.0, palette.1]
+    }
+
+    var body: some View {
         LinearGradient(
-            colors: [palette.0, palette.1],
+            colors: Self.colors(for: seed).map(Color.init),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -219,72 +249,10 @@ private func artworkCornerRadius(for size: CGFloat) -> CGFloat {
     min(max(5, size * 0.12), 14)
 }
 
-/// Average colour of a piece of artwork, used to tint headers. Results are
-/// cached per artwork object because Core Image work is not free.
-@MainActor
-enum ArtworkPalette {
-    private static let context = CIContext(options: [.workingColorSpace: NSNull()])
-    private static let cache = NSCache<MPMediaItemArtwork, UIColor>()
-
-    static func averageColor(of artwork: MPMediaItemArtwork?) -> Color? {
-        guard let artwork else {
-            return nil
-        }
-        if let cached = cache.object(forKey: artwork) {
-            return Color(uiColor: cached)
-        }
-        guard let image = artwork.image(at: CGSize(width: 48, height: 48)),
-              let input = CIImage(image: image) else {
-            return nil
-        }
-
-        let filter = CIFilter.areaAverage()
-        filter.inputImage = input
-        filter.extent = input.extent
-        guard let output = filter.outputImage else {
-            return nil
-        }
-
-        var pixel = [UInt8](repeating: 0, count: 4)
-        context.render(
-            output,
-            toBitmap: &pixel,
-            rowBytes: 4,
-            bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
-            format: .RGBA8,
-            colorSpace: nil
-        )
-        let color = UIColor(
-            red: CGFloat(pixel[0]) / 255,
-            green: CGFloat(pixel[1]) / 255,
-            blue: CGFloat(pixel[2]) / 255,
-            alpha: 1
-        )
-        cache.setObject(color, forKey: artwork)
-        return Color(uiColor: color)
-    }
-}
-
-/// Soft wash of the artwork's colour behind a header, fading into the page.
-struct ArtworkGlowBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let color: Color?
-
-    var body: some View {
-        LinearGradient(
-            colors: [
-                (color ?? Color("AccentColor")).opacity(colorScheme == .dark ? 0.45 : 0.3),
-                Color(.systemBackground).opacity(0),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-}
-
 // MARK: - Rediscovery
 
 struct FreshnessBadge: View {
+    @Environment(\.screenTheme) private var theme
     let freshness: PlayFreshness
 
     var body: some View {
@@ -307,10 +275,10 @@ struct FreshnessBadge: View {
             Text(title)
         }
         .font(.caption2.weight(.semibold))
-        .foregroundStyle(Color("AccentColor"))
+        .foregroundStyle(theme.accentText)
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
-        .background(Color("AccentColor").opacity(0.12), in: Capsule())
+        .background(theme.accent.opacity(0.14), in: Capsule())
         .fixedSize()
         .accessibilityHidden(true)
     }
@@ -320,6 +288,7 @@ struct FreshnessBadge: View {
 /// Reduce Motion is on.
 struct NowPlayingIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.screenTheme) private var theme
     let isPlaying: Bool
 
     var body: some View {
@@ -329,7 +298,7 @@ struct NowPlayingIndicator: View {
                 options: .repeating,
                 isActive: isPlaying && !reduceMotion
             )
-            .foregroundStyle(Color("AccentColor"))
+            .foregroundStyle(theme.accentText)
             .accessibilityHidden(true)
     }
 }
@@ -338,6 +307,7 @@ struct NowPlayingIndicator: View {
 
 struct TrackRow: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.screenTheme) private var theme
     let entry: PlaylistEntry
     var position: Int?
     var isCurrent = false
@@ -354,7 +324,7 @@ struct TrackRow: View {
                     } else {
                         Text("\(position)")
                             .font(.subheadline.monospacedDigit().weight(.medium))
-                            .foregroundStyle(Color("SecondaryText"))
+                            .foregroundStyle(theme.secondaryText)
                     }
                 }
                 .frame(minWidth: 26, alignment: .center)
@@ -367,11 +337,11 @@ struct TrackRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title)
                     .font(.body.weight(isCurrent ? .semibold : .regular))
-                    .foregroundStyle(isCurrent ? Color("AccentColor") : Color.primary)
+                    .foregroundStyle(isCurrent ? theme.accentText : Color.primary)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(Color("SecondaryText"))
+                    .foregroundStyle(theme.secondaryText)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 if dynamicTypeSize.isAccessibilitySize {
                     FreshnessBadge(freshness: freshness)

@@ -66,10 +66,12 @@ No MusicKit capability, App Service-enabled identifier, MusicKit developer token
 4. Tap **Play** to send exactly that order to Music, or **Reshuffle** to roll a new order. The **Rediscovery** menu chooses one of six levels from Off (0) to Maximum (5); changing it previews a new order right away unless that playlist's queue is already playing.
 5. Switch to **All Songs** to browse the playlist in a remembered sort order—Default, play count low-to-high, play count high-to-low, or singer. Sorting never changes the shuffle.
 6. While the queue plays, the current song is highlighted and earlier songs move out of **Up Next**; going back in Music restores them. The main button becomes **Pause** / **Resume**. Tapping **Play** on a partly played saved queue submits only the songs still shown, so it never restarts songs that already moved out of the list.
-7. A mini player stays at the bottom of every screen whenever Music has a current song. Tap it for the full player with previous, play/pause, and next controls, plus the rest of the Rediscover queue when it is the one playing. **Open Music** jumps to the Music app.
+7. A mini player stays at the bottom of every screen whenever Music has a current song; its glass picks up a tint from the song's artwork. Tap it for the full player, which zooms out of the mini player and shows previous, play/pause, and next controls, a progress bar you can drag (or adjust with VoiceOver) to seek, and the rest of the Rediscover queue when it is the one playing. **Open Music** jumps to the Music app.
 8. After navigating away or relaunching, the **Continue** card at the top of the Playlists screen reopens the most recently played order with its progress. Reshuffling that queue updates the card; previewing other playlists never replaces it.
 
-The interface uses system typography, artwork-first layouts with 2×2 album mosaics, generated covers for playlists without artwork, artwork-tinted headers, and an ember-red accent taken from the app icon. Buttons give press feedback and haptics on Play and Reshuffle; reshuffled rows glide into place, and with Reduce Motion enabled they swap without movement. Playback actions show a preparation indicator and disable repeat submissions while Music prepares the queue.
+Every playlist screen takes its colours from its own artwork. The app reads a few colours from up to four covers, or from a generated cover, and lays them out as a soft colour field behind the header that fades into a tinted page; Play, Reshuffle, badges, and secondary text use matching colours chosen to keep WCAG AA contrast in light and dark mode. While a playlist's queue is playing, its field drifts slowly; each Reshuffle deals the colours into a new arrangement. The full player is always dark and fills the screen with the current song's colours, which blend into the next song's when the track changes. The Continue card wears its playlist's colours, and the welcome screen uses the app icon's ember and wine.
+
+Opening a playlist zooms out of its cover on iOS 18 and later; iOS 17 uses the standard push and a simpler static gradient instead of the animated field. The interface keeps system typography, with an expanded display face for playlist titles, 2×2 album mosaics, and generated covers for playlists without artwork. Buttons give press feedback and haptics on Play and Reshuffle; reshuffled rows glide into place. With Reduce Motion enabled, rows swap without movement, colour fields hold still, and track changes crossfade. Colour fields also stop moving when they are off screen. Playback actions show a preparation indicator and disable repeat submissions while Music prepares the queue.
 
 On relaunch, the saved order is rebuilt from the current authorized Music library. Entries removed from the source playlist cannot be reconstructed and are omitted. Because public `MediaPlayer` APIs do not expose a system-queue identifier, live progress is reattached only when Music's current queue index and item identifier match the saved order. Replacing or editing the queue in Music stops Rediscover Shuffle from advancing the saved display; it does not erase that display.
 
@@ -88,9 +90,10 @@ Settings shows Music-library authorization only when access is missing, shows th
 ### Verify the redesigned interface on an iPhone
 
 - Check permission onboarding, playlist search, pinning/reordering, the Rediscovery menu, the Continue card, and the mini player in both light and dark mode.
+- Open playlists with colourful, black-and-white, and missing artwork. Each should get its own colour field with readable text and buttons; grey covers should keep a neutral page with the app's ember accent.
 - On a fresh install, the system Music permission prompt should appear only after **Get Started**. If permission is denied, the app should offer **Open Settings**.
 - Try a small screen, landscape, and the largest Accessibility Text Size. Titles and song details should wrap, Play and Reshuffle should stack vertically, and controls should remain reachable by scrolling.
-- With VoiceOver, check playlist and song labels (including Unplayed/Overlooked), the Rediscovery menu value, pin menus, mini-player controls, and current-song announcements. Enable Reduce Motion and confirm reshuffles swap without sliding, the playing waveform holds still, and onboarding fades without movement.
+- With VoiceOver, check playlist and song labels (including Unplayed/Overlooked), the Rediscovery menu value, pin menus, mini-player controls, and current-song announcements. Enable Reduce Motion and confirm reshuffles swap without sliding, the playing waveform and colour fields hold still, track changes crossfade, and onboarding fades without movement.
 - Play a real playlist, leave and reopen the app, and confirm current-song highlighting, the Continue card's progress, **Pause** / **Resume**, **Reshuffle**, the mini player, and the full player match the Music app. Simulator fixtures cannot verify authorization or system Music playback.
 - Confirm the app icon appears in the Music permission prompt on a device. The iOS 27 Simulator shows a placeholder there for this app's single-PNG icon.
 
@@ -138,12 +141,13 @@ Connect the iPhone to the Mac, open the project in Xcode, select the phone, and 
 - `PlaylistSongSort`: deterministic playlist display sorting by source order, play count, or singer
 - `WeightedShuffleEngine`: pure weighted-permutation math with injectable randomness
 - `PlaylistViewModel`: maps distinct playlist entries into and out of the pure shuffle engine
-- SwiftUI views: permission, playlist browser, playlist detail, complete queue preview, and now-playing card
+- `ArtworkColorPalette`: Apple-independent colour extraction and contrast-checked colour roles for artwork-themed screens
+- SwiftUI views: permission, playlist browser, playlist detail, mini player and full player, and the shared colour field
 - `RediscoverShuffleTests`: deterministic unit tests for the shuffle math and invariants
 
 ## Testing
 
-In Xcode, select an iOS Simulator and run **Product > Test**. The shuffle engine also has a companion Swift Package manifest so its platform-independent tests can run from a terminal with:
+In Xcode, select an iOS Simulator and run **Product > Test**. The shuffle engine and the artwork colour rules also have a companion Swift Package manifest so their platform-independent tests can run from a terminal with:
 
 ```sh
 swift test
@@ -169,6 +173,8 @@ The simulator cannot supply a real on-device Music library or fully validate `sy
 - After several songs advance, confirm the current row is at the top of **Up Next**, and that after replacing Music's queue elsewhere, **Play** starts from that remaining row without restoring earlier songs.
 - Quit and reopen Rediscover Shuffle while its Music queue is still active; confirm the **Continue** card restores the order at the current duplicate-safe position.
 - Use the mini player's play/pause and next buttons and the full player's previous button (which restarts the song after a few seconds of playback); confirm Music responds and the highlighted row follows.
+- Drag the full player's progress bar and confirm Music seeks to the same point; with VoiceOver, swipe up or down on it to skip 15 seconds.
+- Leave the full player and a playing playlist open for a few minutes and confirm scrolling stays smooth and the phone does not run warm.
 - Replace the queue in Music and confirm Rediscover Shuffle freezes the saved order instead of advancing it against unrelated playback.
 - Confirm the Music queue follows the preview order and ordinary Music shuffle remains off.
 - Try an unavailable song if one is present and confirm the rest of the queue can continue.

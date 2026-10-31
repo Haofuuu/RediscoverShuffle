@@ -9,6 +9,7 @@ struct PlaylistBrowserView: View {
     @State private var searchText = ""
     @State private var showsSettings = false
     @State private var showsSavedQueue = false
+    @Namespace private var playlistTransition
 
     private var trimmedSearch: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -75,7 +76,7 @@ struct PlaylistBrowserView: View {
                 List {
                     if trimmedSearch.isEmpty,
                        let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
-                        ContinueQueueCard(viewModel: lastQueueViewModel) {
+                        ContinueQueueCard(viewModel: lastQueueViewModel, transition: playlistTransition) {
                             showsSavedQueue = true
                         }
                             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
@@ -144,6 +145,7 @@ struct PlaylistBrowserView: View {
         .navigationDestination(isPresented: $showsSavedQueue) {
             if let savedQueue = generatedQueueSession.lastQueueViewModel {
                 PlaylistDetailView(playlist: savedQueue.playlist, savedQueue: savedQueue)
+                    .zoomTransition(from: ContinueQueueCard.transitionID, in: playlistTransition)
             }
         }
         .onChange(of: searchText) { _, newValue in
@@ -199,11 +201,13 @@ struct PlaylistBrowserView: View {
                     $0.playlist.id == playlist.id ? $0 : nil
                 }
             )
+            .zoomTransition(from: playlist.id, in: playlistTransition)
         } label: {
             PlaylistRow(
                 playlist: playlist,
                 isLastSelected: playlist.persistentIDString == lastSelectedPlaylistID,
-                isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString)
+                isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString),
+                transition: playlistTransition
             )
         }
         .listRowBackground(Color.clear)
@@ -257,6 +261,7 @@ private struct PlaylistRow: View {
     let playlist: LibraryPlaylist
     let isLastSelected: Bool
     let isPinned: Bool
+    let transition: Namespace.ID
 
     private var isEmpty: Bool {
         playlist.entries.isEmpty
@@ -297,6 +302,7 @@ private struct PlaylistRow: View {
         HStack(spacing: 14) {
             PlaylistArtworkView(playlist: playlist, size: 56)
                 .opacity(isEmpty ? 0.55 : 1)
+                .zoomSource(id: playlist.id, in: transition)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(playlist.name)
@@ -325,15 +331,29 @@ private struct PlaylistRow: View {
     }
 }
 
-/// Entry point back into the most recent queue, showing where listening
-/// left off.
+/// Entry point back into the most recent queue, drawn in that playlist's
+/// own colours so it reads as a way back into it.
 private struct ContinueQueueCard: View {
+    static let transitionID = "continueQueue"
+
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @ObservedObject var viewModel: PlaylistViewModel
+    let transition: Namespace.ID
     let open: () -> Void
 
     private var isLive: Bool {
         playbackService.generatedQueueProgress?.queueID == viewModel.queueID
+    }
+
+    /// The card is always dark so the field shows the playlist's colours at
+    /// full depth, in light mode too.
+    private var palette: ArtworkColorPalette {
+        ArtworkPalette.palette(for: viewModel.playlist, appearance: .dark)
+    }
+
+    private var fieldArrangement: Int {
+        let id = viewModel.queueID.uuid
+        return Int(id.0) << 8 | Int(id.1)
     }
 
     private var progressFraction: Double? {
@@ -344,45 +364,54 @@ private struct ContinueQueueCard: View {
     }
 
     private var detailText: String {
-        guard let position = viewModel.playbackPosition, !viewModel.generatedOrder.isEmpty else {
-            return localizedSongCount(viewModel.generatedOrder.count)
+        let count = viewModel.generatedOrder.count
+        guard let position = viewModel.playbackPosition, count > 0 else {
+            return localizedSongCount(count)
         }
         return String(
-            format: String(localized: "Song %lld of %lld"),
+            format: isLive
+                ? String(localized: "Song %lld of %lld")
+                : String(localized: "Continue from song %lld of %lld"),
             locale: .current,
-            Int64(min(position + 1, viewModel.generatedOrder.count)),
-            Int64(viewModel.generatedOrder.count)
+            Int64(min(position + 1, count)),
+            Int64(count)
         )
+    }
+
+    private var accessibilityText: String {
+        var parts = [viewModel.playlist.name]
+        if isLive {
+            parts.append(String(localized: "Now playing"))
+        }
+        parts.append(detailText)
+        return parts.joined(separator: String(localized: ", "))
     }
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: 14) {
-                PlaylistArtworkView(playlist: viewModel.playlist, size: 64)
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                PlaylistArtworkView(playlist: viewModel.playlist, size: 72)
+                    .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+                    .zoomSource(id: Self.transitionID, in: transition)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 5) {
-                        if isLive {
-                            NowPlayingIndicator(isPlaying: playbackService.isPlaying)
-                                .font(.caption.weight(.bold))
-                        }
-                        Text(isLive ? String(localized: "Now Playing") : String(localized: "Continue"))
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color("AccentColor"))
-                            .textCase(.uppercase)
-                    }
                     Text(viewModel.playlist.name)
                         .font(.headline)
+                        .fontWidth(.expanded)
                         .foregroundStyle(Color.primary)
-                        .lineLimit(1)
-                    Text(detailText)
-                        .font(.subheadline)
-                        .foregroundStyle(Color("SecondaryText"))
+                        .lineLimit(2)
+                    HStack(spacing: 6) {
+                        if isLive {
+                            NowPlayingIndicator(isPlaying: playbackService.isPlaying)
+                        }
+                        Text(detailText)
+                            .foregroundStyle(Color(palette.secondaryText))
+                    }
+                    .font(.subheadline)
                     if let progressFraction {
                         ProgressView(value: progressFraction)
-                            .tint(Color("AccentColor"))
-                            .padding(.top, 2)
+                            .tint(Color(palette.accent))
+                            .padding(.top, 4)
                     }
                 }
 
@@ -390,22 +419,25 @@ private struct ContinueQueueCard: View {
 
                 Image(systemName: "chevron.forward")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color(palette.secondaryText))
                     .accessibilityHidden(true)
             }
-            .padding(14)
+            .padding(16)
             .background {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-                    .overlay {
-                        ArtworkGlowBackground(color: ArtworkPalette.averageColor(of: viewModel.playlist.artwork))
-                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    }
+                ColorField(
+                    palette: palette,
+                    arrangement: fieldArrangement,
+                    isPlaying: isLive && playbackService.isPlaying
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .shadow(color: Color(palette.ground).opacity(0.3), radius: 16, y: 8)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .environment(\.colorScheme, .dark)
+            .screenTheme(palette)
         }
         .buttonStyle(PressableButtonStyle())
-        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityText)
         .accessibilityHint("Opens your most recent queue without changing its order")
     }
 }

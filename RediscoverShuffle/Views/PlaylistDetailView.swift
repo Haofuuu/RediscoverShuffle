@@ -10,6 +10,7 @@ struct PlaylistDetailView: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
@@ -17,9 +18,11 @@ struct PlaylistDetailView: View {
     @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
     @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
     @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
-    @ScaledMetric(relativeTo: .title) private var heroArtworkSize = 210
+    @ScaledMetric(relativeTo: .title) private var heroArtworkSize = 236
     @StateObject private var viewModel: PlaylistViewModel
     @State private var listMode = ListMode.upNext
+    @State private var scroll = ScrollTracker()
+    @State private var headerHeight: CGFloat = 540
     @State private var navigationBarBottom: CGFloat = 100
     @State private var showsNavigationTitle = false
     @State private var playFeedbackTrigger = 0
@@ -44,6 +47,11 @@ struct PlaylistDetailView: View {
     var body: some View {
         List {
             header
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.height
+                } action: { height in
+                    headerHeight = height
+                }
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
@@ -66,12 +74,17 @@ struct PlaylistDetailView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(alignment: .top) {
-            ArtworkGlowBackground(color: ArtworkPalette.averageColor(of: viewModel.playlist.artwork))
-                .frame(height: 460)
-                .ignoresSafeArea()
+        .tracksScrollOffset(in: scroll)
+        .background {
+            PlaylistBackdrop(
+                palette: palette,
+                arrangement: fieldArrangement,
+                isPlaying: isFollowingLiveQueue && playbackService.isPlaying,
+                fieldHeight: navigationBarBottom + headerHeight + 32,
+                scroll: scroll
+            )
         }
-        .background(Color(.systemBackground))
+        .screenTheme(palette)
         .onGeometryChange(for: CGFloat.self) { proxy in
             // Depending on the OS, the list either starts below the bar or
             // reports the bar as a safe-area inset; either value is its bottom.
@@ -124,15 +137,16 @@ struct PlaylistDetailView: View {
     // MARK: Header
 
     private var header: some View {
-        VStack(spacing: 16) {
-            PlaylistArtworkView(playlist: viewModel.playlist, size: min(heroArtworkSize, 280))
-                .shadow(color: .black.opacity(0.22), radius: 22, y: 12)
+        VStack(spacing: 18) {
+            PlaylistArtworkView(playlist: viewModel.playlist, size: min(heroArtworkSize, 300))
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.24), radius: 28, y: 16)
                 .padding(.top, 12)
 
             VStack(spacing: 6) {
                 Text(viewModel.playlist.name)
-                    .font(.title.bold())
-                    .tracking(-0.4)
+                    .font(.title.weight(.bold))
+                    .fontWidth(.expanded)
+                    .tracking(-0.5)
                     .multilineTextAlignment(.center)
                     .accessibilityAddTraits(.isHeader)
                     .onGeometryChange(for: Bool.self) { proxy in
@@ -158,14 +172,15 @@ struct PlaylistDetailView: View {
     }
 
     private var headerSubtitle: Text {
+        let secondary = Color(palette.secondaryText)
         let songs = Text(localizedSongCount(viewModel.playlist.entries.count))
-            .foregroundStyle(Color("SecondaryText"))
+            .foregroundStyle(secondary)
         guard let summary = localizedRediscoverySummary(viewModel.rediscoveryInsight) else {
             return songs
         }
         return songs
-            + Text(verbatim: " · ").foregroundStyle(Color("SecondaryText"))
-            + Text(summary).foregroundStyle(Color("AccentColor"))
+            + Text(verbatim: " · ").foregroundStyle(secondary)
+            + Text(summary).foregroundStyle(Color(palette.accentText)).fontWeight(.semibold)
     }
 
     private var actionButtons: some View {
@@ -235,7 +250,7 @@ struct PlaylistDetailView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .foregroundStyle(Color("AccentColor"))
+                    .foregroundStyle(Color(palette.accentText))
                 Text(
                     String(
                         format: String(localized: "Rediscovery: %@"),
@@ -246,12 +261,12 @@ struct PlaylistDetailView: View {
                 .foregroundStyle(Color.primary)
                 Image(systemName: "chevron.up.chevron.down")
                     .imageScale(.small)
-                    .foregroundStyle(Color("SecondaryText"))
+                    .foregroundStyle(Color(palette.secondaryText))
             }
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(Color(.tertiarySystemFill), in: Capsule())
+            .background(Color.primary.opacity(0.08), in: Capsule())
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
@@ -328,7 +343,8 @@ struct PlaylistDetailView: View {
                         freshness: viewModel.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
                         showPlayCount: showPlayCounts
                     )
-                    .listRowBackground(isCurrent ? Color("AccentColor").opacity(0.08) : Color.clear)
+                    .listRowBackground(isCurrent ? Color(palette.accent).opacity(0.16) : Color.clear)
+                    .listRowSeparatorTint(Color.primary.opacity(0.1))
                 }
             }
         case .allSongs:
@@ -339,6 +355,7 @@ struct PlaylistDetailView: View {
                     showPlayCount: showPlayCounts
                 )
                 .listRowBackground(Color.clear)
+                .listRowSeparatorTint(Color.primary.opacity(0.1))
             }
         }
     }
@@ -369,6 +386,17 @@ struct PlaylistDetailView: View {
     }
 
     // MARK: State
+
+    private var palette: ArtworkColorPalette {
+        ArtworkPalette.palette(for: viewModel.playlist, appearance: .init(colorScheme))
+    }
+
+    /// Each generated order has its own layout of the playlist's colours, so
+    /// a reshuffle visibly deals the field again and a saved queue keeps its look.
+    private var fieldArrangement: Int {
+        let id = viewModel.queueID.uuid
+        return Int(id.0) << 8 | Int(id.1)
+    }
 
     private var liveProgress: GeneratedQueuePlaybackProgress? {
         guard let progress = playbackService.generatedQueueProgress,
@@ -424,5 +452,56 @@ struct PlaylistDetailView: View {
             get: { playbackService.errorMessage != nil },
             set: { if !$0 { playbackService.errorMessage = nil } }
         )
+    }
+}
+
+/// Scroll position for the backdrop. It lives outside the view's own state
+/// so scrolling redraws only the backdrop, not the song list.
+@MainActor
+@Observable
+private final class ScrollTracker {
+    var offset: CGFloat = 0
+}
+
+private extension View {
+    /// Reports how far the list has scrolled. iOS 17 cannot read this, so
+    /// the backdrop stays put there instead of scrolling with the header.
+    @ViewBuilder
+    func tracksScrollOffset(in tracker: ScrollTracker) -> some View {
+        if #available(iOS 18.0, *) {
+            onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            } action: { _, offset in
+                tracker.offset = offset
+            }
+        } else {
+            self
+        }
+    }
+}
+
+/// The playlist's colour field behind the header, fading into its ground
+/// colour beneath the songs. It scrolls away with the header and stretches
+/// when the list is pulled down.
+private struct PlaylistBackdrop: View {
+    let palette: ArtworkColorPalette
+    let arrangement: Int
+    let isPlaying: Bool
+    let fieldHeight: CGFloat
+    let scroll: ScrollTracker
+
+    var body: some View {
+        let offset = scroll.offset
+        ColorField(
+            palette: palette,
+            arrangement: arrangement,
+            isPlaying: isPlaying,
+            fadesIntoGround: true
+        )
+        .frame(height: fieldHeight + max(0, -offset))
+        .offset(y: -max(0, offset))
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Color(palette.ground))
+        .ignoresSafeArea()
     }
 }

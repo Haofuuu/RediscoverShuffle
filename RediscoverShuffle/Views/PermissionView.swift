@@ -5,10 +5,15 @@ import UIKit
 struct PermissionView: View {
     @EnvironmentObject private var libraryService: MusicLibraryService
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage(SettingsKeys.hasShownOnboarding) private var hasShownOnboarding = false
     @State private var showsSettings = false
     @State private var hasAppeared = false
     @ScaledMetric(relativeTo: .largeTitle) private var iconSize = 84
+
+    private var palette: ArtworkColorPalette {
+        ArtworkPalette.brand(appearance: .init(colorScheme))
+    }
 
     private var isDenied: Bool {
         libraryService.authorizationStatus == .denied
@@ -43,7 +48,7 @@ struct PermissionView: View {
 
                     Text(explanation)
                         .font(.body)
-                        .foregroundStyle(Color("SecondaryText"))
+                        .foregroundStyle(Color(palette.secondaryText))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .entrance(order: 1, isVisible: hasAppeared)
@@ -58,7 +63,7 @@ struct PermissionView: View {
                         .accessibilityHidden(true)
                 }
                     .font(.footnote)
-                    .foregroundStyle(Color("SecondaryText"))
+                    .foregroundStyle(Color(palette.secondaryText))
                     .fixedSize(horizontal: false, vertical: true)
                     .entrance(order: 3, isVisible: hasAppeared)
 
@@ -70,11 +75,13 @@ struct PermissionView: View {
             .frame(maxWidth: .infinity)
         }
         .background(alignment: .top) {
-            ArtworkGlowBackground(color: nil)
-                .frame(height: 420)
+            // The welcome screen is the one place the field drifts without
+            // music: a first look at how playlists will feel.
+            ColorField(palette: palette, isPlaying: true, fadesIntoGround: true)
+                .frame(height: 560)
                 .ignoresSafeArea()
         }
-        .background(Color(.systemBackground))
+        .background(Color(palette.ground))
         .safeAreaInset(edge: .bottom) {
             permissionAction
                 .padding(.horizontal, 28)
@@ -93,6 +100,9 @@ struct PermissionView: View {
                 .accessibilityHint("Opens Rediscover Shuffle settings")
             }
         }
+        // Applied after the bottom inset so Get Started is themed too, and
+        // before the sheet so Settings keeps the standard colours.
+        .screenTheme(palette)
         .sheet(isPresented: $showsSettings) {
             NavigationStack {
                 SettingsView()
@@ -159,7 +169,7 @@ struct PermissionView: View {
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
@@ -167,7 +177,7 @@ struct PermissionView: View {
         HStack(alignment: .firstTextBaseline, spacing: 14) {
             Image(systemName: systemImage)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(Color("AccentColor"))
+                .foregroundStyle(Color(palette.accentText))
                 .frame(width: 26)
                 .accessibilityHidden(true)
             Text(title)

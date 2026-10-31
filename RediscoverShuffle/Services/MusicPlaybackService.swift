@@ -195,6 +195,17 @@ final class MusicPlaybackService: ObservableObject {
         refreshPlayerState()
     }
 
+    /// How far into the current song Music is. Music posts no notification
+    /// as time passes, so views poll this while they are on screen.
+    var currentPlaybackTime: TimeInterval {
+        let time = player.currentPlaybackTime
+        return time.isFinite ? max(0, time) : 0
+    }
+
+    func seek(to time: TimeInterval) {
+        player.currentPlaybackTime = max(0, time)
+    }
+
     /// Matches the Music app: a few seconds into a song, "previous" restarts it.
     func skipToPreviousItem() {
         if player.currentPlaybackTime > 3 {
@@ -231,9 +242,11 @@ final class MusicPlaybackService: ObservableObject {
         }
 
         nowPlaying = NowPlayingSnapshot(
+            id: item.persistentID,
             title: safeText(item.title, fallback: String(localized: "Unknown Title")),
             artist: safeText(item.artist, fallback: String(localized: "Unknown Artist")),
-            artwork: item.artwork
+            artwork: item.artwork,
+            duration: item.playbackDuration.isFinite ? max(0, item.playbackDuration) : 0
         )
         refreshGeneratedQueueProgress(with: item)
     }

@@ -56,7 +56,10 @@ struct LibraryPlaylist: Identifiable {
 }
 
 struct NowPlayingSnapshot {
+    let id: MPMediaEntityPersistentID
     let title: String
     let artist: String
     let artwork: MPMediaItemArtwork?
+    /// Zero when Music doesn't know the song's length.
+    let duration: TimeInterval
 }

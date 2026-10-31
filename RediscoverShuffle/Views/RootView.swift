@@ -8,6 +8,7 @@ struct RootView: View {
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @State private var showsNowPlaying = false
+    @Namespace private var nowPlayingTransition
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,7 @@ struct RootView: View {
                 MiniPlayerBar(snapshot: snapshot) {
                     showsNowPlaying = true
                 }
+                .zoomSource(id: "nowPlaying", in: nowPlayingTransition)
                 .transition(
                     reduceMotion
                         ? .opacity
@@ -33,6 +35,7 @@ struct RootView: View {
         .animation(.smooth(duration: 0.3), value: playbackService.nowPlaying == nil)
         .sheet(isPresented: $showsNowPlaying) {
             NowPlayingSheet()
+                .zoomTransition(from: "nowPlaying", in: nowPlayingTransition)
         }
         .task {
             libraryService.synchronizeAuthorizationAndLoad()
