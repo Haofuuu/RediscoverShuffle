@@ -6,15 +6,11 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var libraryService: MusicLibraryService
-    @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
 
     @AppStorage(SettingsKeys.appearance) private var appearanceRawValue = AppAppearance.defaultValue.rawValue
     @AppStorage(SettingsKeys.rediscoveryStrength) private var rediscoveryStrength = RediscoveryStrengthSetting.defaultValue
     @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
     @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
-
-    @State private var showsClearQueueConfirmation = false
-    @State private var showsClearQueueError = false
 
     private let metadata = AppMetadata()
 
@@ -96,21 +92,6 @@ struct SettingsView: View {
             }
 
             Section {
-                Button("Clear Saved Queue", role: .destructive) {
-                    showsClearQueueConfirmation = true
-                }
-                .frame(minHeight: 44)
-                .disabled(!generatedQueueSession.hasSavedQueue)
-                .accessibilityHint(
-                    generatedQueueSession.hasSavedQueue
-                        ? String(localized: "Asks for confirmation before removing Rediscover Shuffle's saved queue")
-                        : String(localized: "No saved Rediscover Shuffle queue is available")
-                )
-            } footer: {
-                Text("Music keeps playing, and your playlists are never changed.")
-            }
-
-            Section {
                 LabeledContent("Version", value: metadata.versionAndBuild)
 
                 Link(destination: Self.repositoryURL) {
@@ -140,23 +121,6 @@ struct SettingsView: View {
                     dismiss()
                 }
             }
-        }
-        .confirmationDialog(
-            "Clear Saved Queue?",
-            isPresented: $showsClearQueueConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Clear Saved Queue", role: .destructive) {
-                showsClearQueueError = !generatedQueueSession.clearSavedQueue()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This removes the locally saved order and playback position. Apple Music will keep playing.")
-        }
-        .alert("Could Not Clear Saved Queue", isPresented: $showsClearQueueError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Rediscover Shuffle could not remove its saved queue file. Please try again.")
         }
     }
 

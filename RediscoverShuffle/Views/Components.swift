@@ -1,4 +1,5 @@
 import MediaPlayer
+import MusicKit
 import SwiftUI
 import UIKit
 
@@ -128,33 +129,24 @@ struct CenteredActionLabel: View {
 
 // MARK: - Artwork
 
-/// Playlist cover: a 2×2 mosaic when four albums are available, a single
-/// cover otherwise, and a generated cover when the playlist has no artwork.
+/// Playlist cover: the one Music shows when MusicKit provides it, otherwise
+/// a 2×2 mosaic when four albums are available, a single cover, or a
+/// generated cover when the playlist has no artwork.
 struct PlaylistArtworkView: View {
+    @EnvironmentObject private var coverStore: PlaylistCoverStore
     let playlist: LibraryPlaylist
     let size: CGFloat
 
     var body: some View {
         Group {
-            if playlist.coverArtworks.count >= 4 {
-                let tileSize = size / 2
-                Grid(horizontalSpacing: 0, verticalSpacing: 0) {
-                    GridRow {
-                        tile(playlist.coverArtworks[0], size: tileSize)
-                        tile(playlist.coverArtworks[1], size: tileSize)
-                    }
-                    GridRow {
-                        tile(playlist.coverArtworks[2], size: tileSize)
-                        tile(playlist.coverArtworks[3], size: tileSize)
-                    }
+            if let cover = coverStore.covers[playlist.id] {
+                // The mosaic stays underneath until Music's cover has loaded.
+                ZStack {
+                    songCover
+                    ArtworkImage(cover.artwork, width: size, height: size)
                 }
-            } else if let artwork = playlist.artwork,
-                      let image = artwork.image(at: CGSize(width: size, height: size)) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
             } else {
-                GeneratedCoverView(seed: playlist.id, size: size)
+                songCover
             }
         }
         .frame(width: size, height: size)
@@ -166,18 +158,52 @@ struct PlaylistArtworkView: View {
         .accessibilityHidden(true)
     }
 
-    @ViewBuilder
-    private func tile(_ artwork: MPMediaItemArtwork, size: CGFloat) -> some View {
-        if let image = artwork.image(at: CGSize(width: size, height: size)) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(width: size, height: size)
-                .clipped()
-        } else {
-            Color(.tertiarySystemFill)
-                .frame(width: size, height: size)
+    private var songCover: some View {
+        Group {
+            if let tiles = mosaicImages {
+                let tileSize = size / 2
+                Grid(horizontalSpacing: 0, verticalSpacing: 0) {
+                    GridRow {
+                        tile(tiles[0], size: tileSize)
+                        tile(tiles[1], size: tileSize)
+                    }
+                    GridRow {
+                        tile(tiles[2], size: tileSize)
+                        tile(tiles[3], size: tileSize)
+                    }
+                }
+            } else if let image = singleImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                GeneratedCoverView(seed: playlist.id, size: size)
+            }
         }
+        .frame(width: size, height: size)
+    }
+
+    /// Four tiles only when all four draw, so a cover never shows a hole.
+    private var mosaicImages: [UIImage]? {
+        guard playlist.coverArtworks.count >= 4 else {
+            return nil
+        }
+        let tileSize = CGSize(width: size / 2, height: size / 2)
+        let images = playlist.coverArtworks.prefix(4).compactMap { $0.image(at: tileSize) }
+        return images.count == 4 ? images : nil
+    }
+
+    private var singleImage: UIImage? {
+        let side = CGSize(width: size, height: size)
+        return playlist.coverArtworks.lazy.compactMap { $0.image(at: side) }.first
+    }
+
+    private func tile(_ image: UIImage, size: CGFloat) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFill()
+            .frame(width: size, height: size)
+            .clipped()
     }
 }
 

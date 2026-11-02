@@ -2,11 +2,11 @@
 
 ## Project
 
-- This is a native iPhone app built with Swift, SwiftUI, and Apple's public `MediaPlayer` framework.
+- This is a native iPhone app built with Swift, SwiftUI, Apple's public `MediaPlayer` framework, and Swift MusicKit for playlist covers.
 - Open `RediscoverShuffle.xcodeproj` for normal development.
 - The minimum deployment target is iOS 17.
-- Keep the app compatible with free Personal Team signing: no paid Apple capabilities, MusicKit developer tokens, backend, private APIs, or third-party dependencies.
-- Keep `MediaPlayer` objects and calls that require the main thread isolated behind `@MainActor` services or view models.
+- The app is signed with a paid Apple Developer Program team, and the App ID has the MusicKit App Service enabled. No backend, private APIs, or third-party dependencies.
+- Keep `MediaPlayer` and MusicKit objects and calls that require the main thread isolated behind `@MainActor` services or view models.
 - Preserve duplicate playlist entries. Never discard a song solely because its `assetURL` is `nil`.
 - Keep weighted-shuffle math independent of Apple frameworks and deterministically testable.
 
@@ -21,8 +21,9 @@
 
 ## Working agreements
 
-- Use public `MediaPlayer`; do not migrate to Swift MusicKit without explicit approval.
-- Do not add external dependencies, networking, analytics, a database, or paid Apple services.
+- Use public `MediaPlayer` for library loading and playback. Swift MusicKit may read library data `MediaPlayer` doesn't expose, such as playlist artwork; moving loading or playback to MusicKit needs explicit approval.
+- Do not add external dependencies, analytics, or a database. Apart from MusicKit loading its own artwork, the app makes no network requests.
+- Keep MusicKit and other Apple frameworks out of `RediscoverShuffle/Shuffle`, which the SwiftPM tests build on macOS.
 - Keep the interface native, accessible, Dynamic Type-safe, and compatible with light and dark mode.
 - Preserve the user's automatic-signing team and bundle-identifier changes.
 - Never modify the user's original playlists.

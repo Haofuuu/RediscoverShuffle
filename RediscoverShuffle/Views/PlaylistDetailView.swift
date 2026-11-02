@@ -14,6 +14,7 @@ struct PlaylistDetailView: View {
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
+    @EnvironmentObject private var coverStore: PlaylistCoverStore
     @AppStorage(SettingsKeys.rediscoveryStrength) private var rediscoveryStrength = RediscoveryStrengthSetting.defaultValue
     @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
     @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
@@ -388,7 +389,11 @@ struct PlaylistDetailView: View {
     // MARK: State
 
     private var palette: ArtworkColorPalette {
-        ArtworkPalette.palette(for: viewModel.playlist, appearance: .init(colorScheme))
+        ArtworkPalette.palette(
+            for: viewModel.playlist,
+            coverSwatches: coverStore.covers[viewModel.playlist.id]?.swatches,
+            appearance: .init(colorScheme)
+        )
     }
 
     /// Each generated order has its own layout of the playlist's colours, so

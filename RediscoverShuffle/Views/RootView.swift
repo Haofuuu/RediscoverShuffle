@@ -7,6 +7,7 @@ struct RootView: View {
     @EnvironmentObject private var libraryService: MusicLibraryService
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
+    @EnvironmentObject private var playlistCoverStore: PlaylistCoverStore
     @State private var showsNowPlaying = false
     @Namespace private var nowPlayingTransition
 
@@ -46,6 +47,7 @@ struct RootView: View {
             }
         }
         .onReceive(libraryService.$playlists) { playlists in
+            playlistCoverStore.reload(for: playlists)
             guard let restoration = generatedQueueSession.restoreIfNeeded(from: playlists) else {
                 return
             }

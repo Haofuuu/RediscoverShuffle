@@ -1,12 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ of %@" : {
+    ", " : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已播放 %1$@，共 %2$@"
+            "value" : "，"
           }
         }
       }
@@ -23,6 +23,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ of %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已播放 %1$@，共 %2$@"
           }
         }
       }
@@ -98,6 +108,23 @@
         }
       }
     },
+    "%lld · %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld · %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld · %2$@"
+          }
+        }
+      }
+    },
     "%lld overlooked" : {
       "localizations" : {
         "zh-Hans" : {
@@ -138,23 +165,6 @@
         }
       }
     },
-    "%lld · %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld · %2$@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld · %2$@"
-          }
-        }
-      }
-    },
     "%lld, %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -172,12 +182,13 @@
         }
       }
     },
-    ", " : {
+    "•" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "，"
+            "value" : "•"
           }
         }
       }
@@ -348,16 +359,6 @@
         }
       }
     },
-    "Asks for confirmation before removing Rediscover Shuffle's saved queue" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "先询问确认，再移除“重拾随机播放”保存的队列"
-          }
-        }
-      }
-    },
     "Authorized" : {
       "localizations" : {
         "zh-Hans" : {
@@ -421,26 +422,6 @@
         }
       }
     },
-    "Clear Saved Queue" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除已保存的队列"
-          }
-        }
-      }
-    },
-    "Clear Saved Queue?" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否清除已保存的队列？"
-          }
-        }
-      }
-    },
     "Clearing removes only Rediscover Shuffle's saved order and position. It does not stop Apple Music or modify the source playlist." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -448,16 +429,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除操作只会移除“重拾随机播放”保存的顺序和位置，不会停止 Apple Music 播放或修改原播放列表。"
-          }
-        }
-      }
-    },
-    "Continue" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "继续"
           }
         }
       }
@@ -472,12 +443,12 @@
         }
       }
     },
-    "Could Not Clear Saved Queue" : {
+    "Could Not Remove Queue" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法清除已保存的队列"
+            "value" : "无法移除队列"
           }
         }
       }
@@ -728,12 +699,44 @@
         }
       }
     },
+    "iOS manages language per app. Open this app's Settings page and choose Language when that option is available. iOS offers only languages translated by the app." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 会单独管理每个 App 的语言。打开此 App 的“设置”页面，并在“语言”选项可用时进行选择。iOS 只会提供 App 已翻译的语言。"
+          }
+        }
+      }
+    },
+    "iOS Settings" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 设置"
+          }
+        }
+      }
+    },
     "Language" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "语言"
+          }
+        }
+      }
+    },
+    "last opened" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次打开"
           }
         }
       }
@@ -850,37 +853,6 @@
         }
       }
     },
-    "Music Library" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音乐资料库"
-          }
-        }
-      }
-    },
-    "Music Library Problem" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音乐资料库出现问题"
-          }
-        }
-      }
-    },
-    "Music Permission" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音乐权限"
-          }
-        }
-      }
-    },
     "Music access is restricted" : {
       "localizations" : {
         "zh-Hans" : {
@@ -943,12 +915,12 @@
         }
       }
     },
-    "Music keeps playing, and your playlists are never changed." : {
+    "Music Library" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“音乐”会继续播放，你的播放列表也不会被更改。"
+            "value" : "音乐资料库"
           }
         }
       }
@@ -964,13 +936,23 @@
         }
       }
     },
-    "NOW PLAYING" : {
+    "Music Library Problem" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音乐资料库出现问题"
+          }
+        }
+      }
+    },
+    "Music Permission" : {
       "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在播放"
+            "value" : "音乐权限"
           }
         }
       }
@@ -995,16 +977,6 @@
         }
       }
     },
-    "No Playlists Found" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到播放列表"
-          }
-        }
-      }
-    },
     "No playlist name contains “%@”." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1015,12 +987,12 @@
         }
       }
     },
-    "No saved Rediscover Shuffle queue is available" : {
+    "No Playlists Found" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "没有可用的“重拾随机播放”已保存队列"
+            "value" : "未找到播放列表"
           }
         }
       }
@@ -1057,7 +1029,7 @@
         }
       }
     },
-    "Now Playing" : {
+    "Now playing" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1067,7 +1039,8 @@
         }
       }
     },
-    "Now playing" : {
+    "NOW PLAYING" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1104,16 +1077,6 @@
         }
       }
     },
-    "OK" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "好"
-          }
-        }
-      }
-    },
     "Off" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1124,12 +1087,32 @@
         }
       }
     },
+    "OK" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
+        }
+      }
+    },
     "One step left: allow Music access" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "只差一步：允许访问音乐"
+          }
+        }
+      }
+    },
+    "Open iOS Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 iOS 设置"
           }
         }
       }
@@ -1150,16 +1133,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开设置"
-          }
-        }
-      }
-    },
-    "Open iOS Settings" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开 iOS 设置"
           }
         }
       }
@@ -1185,16 +1158,6 @@
         }
       }
     },
-    "Opens this app's page in Settings" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开此 App 的设置页面"
-          }
-        }
-      }
-    },
     "Opens this app's page in iOS Settings" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1212,6 +1175,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开此 App 在 iOS“设置”中的页面，可在那里选择语言"
+          }
+        }
+      }
+    },
+    "Opens this app's page in Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开此 App 的设置页面"
           }
         }
       }
@@ -1283,6 +1256,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "置顶播放列表"
+          }
+        }
+      }
+    },
+    "pinned" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已置顶"
           }
         }
       }
@@ -1386,6 +1369,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "播放列表"
+          }
+        }
+      }
+    },
+    "plays" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次"
           }
         }
       }
@@ -1532,12 +1526,12 @@
         }
       }
     },
-    "Rediscover Shuffle could not remove its saved queue file. Please try again." : {
+    "Rediscover Shuffle could not remove its saved queue. Please try again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“重拾随机播放”无法移除保存的队列文件。请再试一次。"
+            "value" : "“重拾随机播放”无法移除保存的队列。请再试一次。"
           }
         }
       }
@@ -1563,17 +1557,6 @@
         }
       }
     },
-    "Rediscovery Strength" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重拾强度"
-          }
-        }
-      }
-    },
     "Rediscovery decides how strongly less-played songs lead each new order." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1585,6 +1568,17 @@
       }
     },
     "Rediscovery strength" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾强度"
+          }
+        }
+      }
+    },
+    "Rediscovery Strength" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1632,6 +1626,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "剩余顺序"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
           }
         }
       }
@@ -2130,16 +2134,6 @@
         }
       }
     },
-    "This removes the locally saved order and playback position. Apple Music will keep playing." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这会移除本地保存的顺序和播放位置。Apple Music 将继续播放。"
-          }
-        }
-      }
-    },
     "Touch and hold to unpin or move this playlist. Use Edit to drag pinned playlists." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2261,17 +2255,6 @@
         }
       }
     },
-    "View Last Queue" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看上次队列"
-          }
-        }
-      }
-    },
     "View last generated queue for %@, %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2285,6 +2268,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看为 %1$@ 生成的上次队列，共 %2$@"
+          }
+        }
+      }
+    },
+    "View Last Queue" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看上次队列"
           }
         }
       }
@@ -2316,70 +2310,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "您的资料库信息和随机播放计算均保留在这台 iPhone 上。本 App 不使用分析功能或服务器。"
-          }
-        }
-      }
-    },
-    "iOS Settings" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iOS 设置"
-          }
-        }
-      }
-    },
-    "iOS manages language per app. Open this app's Settings page and choose Language when that option is available. iOS offers only languages translated by the app." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iOS 会单独管理每个 App 的语言。打开此 App 的“设置”页面，并在“语言”选项可用时进行选择。iOS 只会提供 App 已翻译的语言。"
-          }
-        }
-      }
-    },
-    "last opened" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上次打开"
-          }
-        }
-      }
-    },
-    "pinned" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已置顶"
-          }
-        }
-      }
-    },
-    "plays" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次"
-          }
-        }
-      }
-    },
-    "•" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "•"
           }
         }
       }

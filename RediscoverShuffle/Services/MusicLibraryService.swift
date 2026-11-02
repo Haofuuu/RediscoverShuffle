@@ -129,10 +129,15 @@ final class MusicLibraryService: ObservableObject {
         var seenAlbumIDs = Set<MPMediaEntityPersistentID>()
         var artworks: [MPMediaItemArtwork] = []
         for item in items.prefix(60) {
+            // Songs whose artwork hasn't downloaded from iCloud still return an
+            // artwork object, but it draws nothing and would leave a blank
+            // tile. Another song from the same album may still have it.
             guard let artwork = item.artwork,
-                  seenAlbumIDs.insert(item.albumPersistentID).inserted else {
+                  !seenAlbumIDs.contains(item.albumPersistentID),
+                  artwork.image(at: CGSize(width: 32, height: 32)) != nil else {
                 continue
             }
+            seenAlbumIDs.insert(item.albumPersistentID)
             artworks.append(artwork)
             if artworks.count == 4 {
                 break

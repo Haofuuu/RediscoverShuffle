@@ -6,9 +6,11 @@ struct PlaylistBrowserView: View {
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var searchText = ""
     @State private var showsSettings = false
     @State private var showsSavedQueue = false
+    @State private var showsRemoveQueueError = false
     @Namespace private var playlistTransition
 
     private var trimmedSearch: String {
@@ -76,9 +78,12 @@ struct PlaylistBrowserView: View {
                 List {
                     if trimmedSearch.isEmpty,
                        let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
-                        ContinueQueueCard(viewModel: lastQueueViewModel, transition: playlistTransition) {
-                            showsSavedQueue = true
-                        }
+                        ContinueQueueCard(
+                            viewModel: lastQueueViewModel,
+                            transition: playlistTransition,
+                            open: { showsSavedQueue = true },
+                            remove: removeSavedQueue
+                        )
                             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -118,7 +123,9 @@ struct PlaylistBrowserView: View {
         .background(Color(.systemBackground))
         .navigationTitle("Playlists")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $searchText, prompt: "Search playlists")
+        // Kept under the title: iOS 26 would otherwise put search at the
+        // bottom of the screen, where the mini player sits.
+        .searchable(text: $searchText, placement: .navigationBarDrawer, prompt: "Search playlists")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if availablePinnedPlaylists.count > 1 {
@@ -141,6 +148,11 @@ struct PlaylistBrowserView: View {
             NavigationStack {
                 SettingsView()
             }
+        }
+        .alert("Could Not Remove Queue", isPresented: $showsRemoveQueueError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Rediscover Shuffle could not remove its saved queue. Please try again.")
         }
         .navigationDestination(isPresented: $showsSavedQueue) {
             if let savedQueue = generatedQueueSession.lastQueueViewModel {
@@ -240,6 +252,14 @@ struct PlaylistBrowserView: View {
         pinnedPlaylistStore.updateOrder(orderedIDs)
     }
 
+    /// Forgets the saved order behind the Continue card. Music keeps playing
+    /// and the playlist itself is untouched; the next Play saves a new one.
+    private func removeSavedQueue() {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
+            showsRemoveQueueError = !generatedQueueSession.clearSavedQueue()
+        }
+    }
+
     private func pinButton(for playlist: LibraryPlaylist) -> some View {
         let isPinned = pinnedPlaylistStore.isPinned(playlist.persistentIDString)
         return Button {
@@ -337,9 +357,13 @@ private struct ContinueQueueCard: View {
     static let transitionID = "continueQueue"
 
     @EnvironmentObject private var playbackService: MusicPlaybackService
+    @EnvironmentObject private var coverStore: PlaylistCoverStore
     @ObservedObject var viewModel: PlaylistViewModel
     let transition: Namespace.ID
     let open: () -> Void
+    let remove: () -> Void
+
+    private static let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
     private var isLive: Bool {
         playbackService.generatedQueueProgress?.queueID == viewModel.queueID
@@ -348,7 +372,11 @@ private struct ContinueQueueCard: View {
     /// The card is always dark so the field shows the playlist's colours at
     /// full depth, in light mode too.
     private var palette: ArtworkColorPalette {
-        ArtworkPalette.palette(for: viewModel.playlist, appearance: .dark)
+        ArtworkPalette.palette(
+            for: viewModel.playlist,
+            coverSwatches: coverStore.covers[viewModel.playlist.id]?.swatches,
+            appearance: .dark
+        )
     }
 
     private var fieldArrangement: Int {
@@ -429,15 +457,20 @@ private struct ContinueQueueCard: View {
                     arrangement: fieldArrangement,
                     isPlaying: isLive && playbackService.isPlaying
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .clipShape(Self.shape)
                 .shadow(color: Color(palette.ground).opacity(0.3), radius: 16, y: 8)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .contentShape(Self.shape)
             .environment(\.colorScheme, .dark)
             .screenTheme(palette)
         }
         .buttonStyle(PressableButtonStyle())
+        .contentShape(.contextMenuPreview, Self.shape)
+        .contextMenu {
+            Button("Remove", systemImage: "minus.circle", role: .destructive, action: remove)
+        }
         .accessibilityLabel(accessibilityText)
         .accessibilityHint("Opens your most recent queue without changing its order")
+        .accessibilityAction(named: "Remove", remove)
     }
 }

@@ -28,12 +28,14 @@
 		A10000000000000000000014 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* AppSettings.swift */; };
 		A10000000000000000000015 /* GeneratedQueueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* GeneratedQueueStore.swift */; };
 		A10000000000000000000016 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* SettingsView.swift */; };
+		A10000000000000000000017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* Localizable.xcstrings */; };
+		A10000000000000000000018 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* InfoPlist.xcstrings */; };
 		A1000000000000000000001C /* NowPlayingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001C /* NowPlayingViews.swift */; };
 		A1000000000000000000001D /* RediscoveryInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001D /* RediscoveryInsight.swift */; };
 		A1000000000000000000001E /* ColorField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001E /* ColorField.swift */; };
 		A1000000000000000000001F /* ArtworkColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001F /* ArtworkColorPalette.swift */; };
-		A10000000000000000000017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* Localizable.xcstrings */; };
-		A10000000000000000000018 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* InfoPlist.xcstrings */; };
+		A10000000000000000000020 /* PlaylistCoverStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* PlaylistCoverStore.swift */; };
+		A10000000000000000000021 /* PlaylistCoverMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* PlaylistCoverMatcher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,12 +73,14 @@
 		A20000000000000000000017 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A20000000000000000000018 /* GeneratedQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedQueueStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000019 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A2000000000000000000001B /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		A2000000000000000000001C /* NowPlayingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingViews.swift; sourceTree = "<group>"; };
 		A2000000000000000000001D /* RediscoveryInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RediscoveryInsight.swift; sourceTree = "<group>"; };
 		A2000000000000000000001E /* ColorField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorField.swift; sourceTree = "<group>"; };
 		A2000000000000000000001F /* ArtworkColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkColorPalette.swift; sourceTree = "<group>"; };
-		A2000000000000000000001A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		A2000000000000000000001B /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		A20000000000000000000020 /* PlaylistCoverStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCoverStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* PlaylistCoverMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCoverMatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000004 /* MusicLibraryService.swift */,
+				A20000000000000000000020 /* PlaylistCoverStore.swift */,
 				A20000000000000000000005 /* MusicPlaybackService.swift */,
 				A20000000000000000000012 /* PinnedPlaylistStore.swift */,
 				A20000000000000000000014 /* GeneratedQueueSession.swift */,
@@ -151,6 +156,7 @@
 				A20000000000000000000018 /* GeneratedQueueStore.swift */,
 				A2000000000000000000001D /* RediscoveryInsight.swift */,
 				A2000000000000000000001F /* ArtworkColorPalette.swift */,
+				A20000000000000000000021 /* PlaylistCoverMatcher.swift */,
 			);
 			path = Shuffle;
 			sourceTree = "<group>";
@@ -320,6 +326,7 @@
 				A10000000000000000000002 /* LibraryModels.swift in Sources */,
 				A10000000000000000000003 /* WeightedShuffleEngine.swift in Sources */,
 				A10000000000000000000004 /* MusicLibraryService.swift in Sources */,
+				A10000000000000000000020 /* PlaylistCoverStore.swift in Sources */,
 				A10000000000000000000005 /* MusicPlaybackService.swift in Sources */,
 				A10000000000000000000006 /* PlaylistViewModel.swift in Sources */,
 				A10000000000000000000007 /* RootView.swift in Sources */,
@@ -338,6 +345,7 @@
 				A1000000000000000000001D /* RediscoveryInsight.swift in Sources */,
 				A1000000000000000000001E /* ColorField.swift in Sources */,
 				A1000000000000000000001F /* ArtworkColorPalette.swift in Sources */,
+				A10000000000000000000021 /* PlaylistCoverMatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

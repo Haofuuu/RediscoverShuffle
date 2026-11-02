@@ -13,7 +13,6 @@ struct RestoredGeneratedQueue {
 @MainActor
 final class GeneratedQueueSession: ObservableObject {
     @Published private(set) var lastQueueViewModel: PlaylistViewModel?
-    @Published private(set) var hasSavedQueue: Bool
 
     private let store: GeneratedQueueStore
     private var rememberedQueueID: UUID?
@@ -23,7 +22,6 @@ final class GeneratedQueueSession: ObservableObject {
 
     init(store: GeneratedQueueStore = GeneratedQueueStore()) {
         self.store = store
-        hasSavedQueue = store.hasSavedQueue
     }
 
     func remember(_ viewModel: PlaylistViewModel) {
@@ -87,7 +85,6 @@ final class GeneratedQueueSession: ObservableObject {
         submittedQueueID = nil
         persistedEntries = []
         lastPlayerIndex = nil
-        hasSavedQueue = false
         return true
     }
 
@@ -252,9 +249,7 @@ final class GeneratedQueueSession: ObservableObject {
             submittedQueueID: submittedQueueID,
             playbackPlayerIndex: lastPlayerIndex
         )
-        if store.save(storedQueue) {
-            hasSavedQueue = true
-        }
+        store.save(storedQueue)
     }
 
     private func storedEntries(

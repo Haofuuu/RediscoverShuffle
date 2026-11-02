@@ -1,4 +1,5 @@
 import MediaPlayer
+import MusicKit
 import SwiftUI
 import UIKit
 
@@ -7,6 +8,18 @@ import UIKit
 extension Color {
     init(_ color: PaletteColor) {
         self.init(.sRGB, red: color.red, green: color.green, blue: color.blue)
+    }
+}
+
+extension PaletteColor {
+    init?(_ color: CGColor) {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let converted = color.converted(to: space, intent: .defaultIntent, options: nil),
+              let components = converted.components,
+              components.count >= 3 else {
+            return nil
+        }
+        self.init(red: Double(components[0]), green: Double(components[1]), blue: Double(components[2]))
     }
 }
 
@@ -53,11 +66,15 @@ enum ArtworkPalette {
         )
     }
 
+    /// Pass the swatches of Music's own cover when there is one, so the field
+    /// matches the cover on screen rather than the songs behind it.
     static func palette(
         for playlist: LibraryPlaylist,
+        coverSwatches: [PaletteColor]? = nil,
         appearance: ArtworkColorPalette.Appearance
     ) -> ArtworkColorPalette {
-        palette(swatches: swatches(for: playlist), appearance: appearance)
+        let swatches = coverSwatches.flatMap { $0.isEmpty ? nil : $0 } ?? swatches(for: playlist)
+        return palette(swatches: swatches, appearance: appearance)
     }
 
     static func palette(
@@ -112,10 +129,33 @@ enum ArtworkPalette {
         return colors
     }
 
+    /// Reads a Music cover's pixels when it is in the library. Covers that
+    /// would have to be downloaded fall back to the colours Music lists with
+    /// the artwork, so the app itself makes no network request.
+    static func swatches(of artwork: Artwork) async -> [PaletteColor] {
+        if let url = artwork.url(width: 48, height: 48),
+           url.scheme?.lowercased() != "https", url.scheme?.lowercased() != "http",
+           let (data, _) = try? await URLSession.shared.data(from: url),
+           let image = UIImage(data: data) {
+            let colors = extractSwatches(from: image)
+            if !colors.isEmpty {
+                return colors
+            }
+        }
+        return [artwork.backgroundColor, artwork.primaryTextColor, artwork.secondaryTextColor]
+            .compactMap { $0.flatMap(PaletteColor.init) }
+    }
+
     private static func extractSwatches(from artwork: MPMediaItemArtwork) -> [PaletteColor] {
+        guard let image = artwork.image(at: CGSize(width: 48, height: 48)) else {
+            return []
+        }
+        return extractSwatches(from: image)
+    }
+
+    private static func extractSwatches(from image: UIImage) -> [PaletteColor] {
         let side = 24
-        guard let image = artwork.image(at: CGSize(width: side * 2, height: side * 2)),
-              let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) else {
+        guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) else {
             return []
         }
         var pixels = [UInt8](repeating: 0, count: side * side * 4)
@@ -201,6 +241,7 @@ extension View {
 /// reshuffle visibly reshuffles the room.
 struct ColorField: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     let palette: ArtworkColorPalette
     var arrangement = 0
     var isPlaying = false
@@ -234,6 +275,11 @@ struct ColorField: View {
             } else {
                 layout.fallbackGradient
             }
+        }
+        // An appearance switch crossfades the whole window, so the field
+        // changes with it instead of easing into its new colours afterwards.
+        .transaction(value: colorScheme) { transaction in
+            transaction.animation = nil
         }
         .animation(reduceMotion ? .easeInOut(duration: 0.3) : .smooth(duration: 1.1), value: arrangement)
         .animation(.easeInOut(duration: 0.8), value: palette)
