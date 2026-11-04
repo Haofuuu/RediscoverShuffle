@@ -50,82 +50,67 @@ struct PlaylistBrowserView: View {
     }
 
     var body: some View {
-        Group {
-            if libraryService.isLoading && libraryService.playlists.isEmpty {
-                ProgressView("Loading playlists…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if libraryService.playlists.isEmpty {
-                EmptyStateView(
-                    symbol: "music.note.list",
-                    title: String(localized: "No Playlists Found"),
-                    message: String(localized: "Add a playlist to your library in the Music app, then refresh here."),
-                    actionTitle: String(localized: "Refresh"),
-                    action: libraryService.refreshPlaylists
+        // The list stays on screen in every state, with loading and empty
+        // states laid over it. Swapping it out leaves the large title and
+        // search field attached to nothing, so they collapse or jump when the
+        // list comes back.
+        List {
+            if trimmedSearch.isEmpty,
+               !libraryService.playlists.isEmpty,
+               let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
+                ContinueQueueCard(
+                    viewModel: lastQueueViewModel,
+                    transition: playlistTransition,
+                    open: { showsSavedQueue = true },
+                    remove: removeSavedQueue
                 )
-            } else if matchingPlaylists.isEmpty {
-                EmptyStateView(
-                    symbol: "magnifyingglass",
-                    title: String(localized: "No Matches"),
-                    message: String(
-                        format: String(localized: "No playlist name contains “%@”."),
-                        locale: .current,
-                        searchText
-                    ),
-                    actionTitle: nil,
-                    action: nil
-                )
-            } else {
-                List {
-                    if trimmedSearch.isEmpty,
-                       let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
-                        ContinueQueueCard(
-                            viewModel: lastQueueViewModel,
-                            transition: playlistTransition,
-                            open: { showsSavedQueue = true },
-                            remove: removeSavedQueue
-                        )
-                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                    }
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
 
-                    if !pinnedPlaylists.isEmpty {
-                        Section {
-                            ForEach(pinnedPlaylists) { playlist in
-                                playlistLink(for: playlist)
-                            }
-                            .onMove(perform: movePinnedPlaylists)
-                            .moveDisabled(!canReorderPinnedPlaylists)
-                        } header: {
-                            sectionTitle(String(localized: "Pinned"))
-                        }
+            if !pinnedPlaylists.isEmpty {
+                Section {
+                    ForEach(pinnedPlaylists) { playlist in
+                        playlistLink(for: playlist)
                     }
-
-                    if !unpinnedPlaylists.isEmpty {
-                        Section {
-                            ForEach(unpinnedPlaylists) { playlist in
-                                playlistLink(for: playlist)
-                            }
-                        } header: {
-                            if !pinnedPlaylists.isEmpty {
-                                sectionTitle(String(localized: "All Playlists"))
-                            }
-                        }
-                    }
+                    .onMove(perform: movePinnedPlaylists)
+                    .moveDisabled(!canReorderPinnedPlaylists)
+                } header: {
+                    sectionTitle(String(localized: "Pinned"))
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .refreshable {
-                    libraryService.refreshPlaylists()
+            }
+
+            if !unpinnedPlaylists.isEmpty {
+                Section {
+                    ForEach(unpinnedPlaylists) { playlist in
+                        playlistLink(for: playlist)
+                    }
+                } header: {
+                    if !pinnedPlaylists.isEmpty {
+                        sectionTitle(String(localized: "All Playlists"))
+                    }
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .refreshable {
+            libraryService.refreshPlaylists()
+        }
+        .overlay {
+            emptyState
+        }
         .background(Color(.systemBackground))
         .navigationTitle("Playlists")
-        .navigationBarTitleDisplayMode(.large)
+        // A large title that stays in the bar: with search always shown, a
+        // collapsing title starts out collapsed on iOS 27.
+        .toolbarTitleDisplayMode(.inlineLarge)
         // Kept under the title: iOS 26 would otherwise put search at the
-        // bottom of the screen, where the mini player sits.
-        .searchable(text: $searchText, placement: .navigationBarDrawer, prompt: "Search playlists")
+        // bottom of the screen, where the mini player sits. Always shown,
+        // because a hidden field reopens its space with a jump when coming
+        // back from a playlist.
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search playlists")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if availablePinnedPlaylists.count > 1 {
@@ -176,6 +161,34 @@ struct PlaylistBrowserView: View {
             }
         } message: {
             Text(libraryService.errorMessage ?? String(localized: "An unknown error occurred."))
+        }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        if libraryService.isLoading && libraryService.playlists.isEmpty {
+            ProgressView("Loading playlists…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if libraryService.playlists.isEmpty {
+            EmptyStateView(
+                symbol: "music.note.list",
+                title: String(localized: "No Playlists Found"),
+                message: String(localized: "Add a playlist to your library in the Music app, then refresh here."),
+                actionTitle: String(localized: "Refresh"),
+                action: libraryService.refreshPlaylists
+            )
+        } else if matchingPlaylists.isEmpty {
+            EmptyStateView(
+                symbol: "magnifyingglass",
+                title: String(localized: "No Matches"),
+                message: String(
+                    format: String(localized: "No playlist name contains “%@”."),
+                    locale: .current,
+                    searchText
+                ),
+                actionTitle: nil,
+                action: nil
+            )
         }
     }
 

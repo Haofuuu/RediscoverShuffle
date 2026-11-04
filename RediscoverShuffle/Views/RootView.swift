@@ -9,7 +9,19 @@ struct RootView: View {
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @EnvironmentObject private var playlistCoverStore: PlaylistCoverStore
     @State private var showsNowPlaying = false
+    @State private var bottomSafeArea: CGFloat = 0
+    @State private var isKeyboardVisible = false
     @Namespace private var nowPlayingTransition
+
+    /// Floating bars keep the same distance from the bottom edge as from the
+    /// sides, like the system's tab bar.
+    private static let floatingBarInset: CGFloat = 16
+
+    /// Sits the mini player inside the home-indicator zone rather than above
+    /// it; a negative value lowers it past the bottom safe area.
+    private var miniPlayerBottomPadding: CGFloat {
+        Self.floatingBarInset - bottomSafeArea
+    }
 
     var body: some View {
         NavigationStack {
@@ -19,13 +31,18 @@ struct RootView: View {
                 PermissionView()
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .floatingBottomBar {
+            // Like the system's bottom bars, the mini player stays behind the
+            // keyboard while search is being typed.
             if libraryService.authorizationStatus == .authorized,
+               !isKeyboardVisible,
                let snapshot = playbackService.nowPlaying {
                 MiniPlayerBar(snapshot: snapshot) {
                     showsNowPlaying = true
                 }
                 .zoomSource(id: "nowPlaying", in: nowPlayingTransition)
+                .padding(.horizontal, Self.floatingBarInset)
+                .padding(.bottom, miniPlayerBottomPadding)
                 .transition(
                     reduceMotion
                         ? .opacity
@@ -33,7 +50,23 @@ struct RootView: View {
                 )
             }
         }
+        .background {
+            Color.clear
+                .ignoresSafeArea(.keyboard)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.safeAreaInsets.bottom
+                } action: { inset in
+                    bottomSafeArea = inset
+                }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
+        }
         .animation(.smooth(duration: 0.3), value: playbackService.nowPlaying == nil)
+        .animation(.smooth(duration: 0.25), value: isKeyboardVisible)
         .sheet(isPresented: $showsNowPlaying) {
             NowPlayingSheet()
                 .zoomTransition(from: "nowPlaying", in: nowPlayingTransition)
@@ -76,6 +109,19 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             libraryService.synchronizeAuthorizationAndLoad()
             playbackService.synchronizePlayerState()
+        }
+    }
+}
+
+private extension View {
+    /// A bar pinned to the bottom of the screen. On iOS 26 and later, content
+    /// scrolling beneath it fades under the system's scroll edge effect.
+    @ViewBuilder
+    func floatingBottomBar<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 26.0, *) {
+            safeAreaBar(edge: .bottom, spacing: 0, content: content)
+        } else {
+            safeAreaInset(edge: .bottom, spacing: 0, content: content)
         }
     }
 }

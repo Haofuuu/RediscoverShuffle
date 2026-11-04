@@ -98,6 +98,7 @@ Settings shows Music-library authorization only when access is missing, shows th
 ### Verify the redesigned interface on an iPhone
 
 - Check permission onboarding, playlist search, pinning/reordering, the Rediscovery menu, the Continue card, and the mini player in both light and dark mode.
+- On iOS 26 and later, confirm the search field stays under the Playlists title, including after returning from a playlist, and that the mini player floats just above the home indicator with rows fading beneath it and tucks behind the keyboard while you search.
 - Check playlists with songs from iCloud Music Library that aren't downloaded; their covers should never show blank tiles.
 - Compare covers with the Music app: a playlist with a custom image, one with Music's collage, an Apple Music playlist added to the library, and two playlists with the same name. Each cover should match Music, or fall back to the mosaic when Music has none or the playlist can't be matched, and its colour field should match the cover shown.
 - Open playlists with colourful, black-and-white, and missing artwork. Each should get its own colour field with readable text and buttons; grey covers should keep a neutral page with the app's ember accent.

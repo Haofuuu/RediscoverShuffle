@@ -16,8 +16,8 @@ struct MiniPlayerBar: View {
     var body: some View {
         HStack(spacing: 4) {
             Button(action: open) {
-                HStack(spacing: 12) {
-                    ArtworkView(artwork: snapshot.artwork, size: 42)
+                HStack(spacing: 10) {
+                    ArtworkView(artwork: snapshot.artwork, size: 36)
                         .id(snapshot.id)
                         .transition(.opacity)
                     VStack(alignment: .leading, spacing: 1) {
@@ -60,21 +60,21 @@ struct MiniPlayerBar: View {
         }
         .buttonStyle(PressableButtonStyle())
         .foregroundStyle(Color.primary)
-        .padding(.leading, 8)
-        .padding(.trailing, 6)
-        .padding(.vertical, 8)
+        .padding(.leading, 6)
+        .padding(.trailing, 4)
+        .padding(.vertical, 6)
         .floatingBarBackground(tint: Color(palette.field[0]))
         .animation(.easeInOut(duration: 0.3), value: snapshot.id)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 6)
     }
 }
 
+/// A capsule like the system's floating bars, so the artwork inset matches
+/// the rounded ends.
 private struct FloatingBarBackground: ViewModifier {
     let tint: Color
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        let shape = Capsule(style: .continuous)
         if #available(iOS 26.0, *) {
             content.glassEffect(.regular.tint(tint.opacity(0.45)), in: shape)
         } else {

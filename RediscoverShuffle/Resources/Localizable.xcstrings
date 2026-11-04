@@ -369,16 +369,6 @@
         }
       }
     },
-    "Cancel" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        }
-      }
-    },
     "Changes the order of songs shown below and remembers the selection" : {
       "extractionState" : "stale",
       "localizations" : {
