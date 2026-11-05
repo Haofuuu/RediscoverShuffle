@@ -17,7 +17,6 @@
 		A10000000000000000000008 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* PermissionView.swift */; };
 		A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* PlaylistBrowserView.swift */; };
 		A1000000000000000000000A /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* PlaylistDetailView.swift */; };
-		A1000000000000000000000B /* QueuePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* QueuePreviewView.swift */; };
 		A1000000000000000000000C /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* Components.swift */; };
 		A1000000000000000000000D /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* MediaPlayer.framework */; };
 		A1000000000000000000000E /* WeightedShuffleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* WeightedShuffleEngineTests.swift */; };
@@ -26,6 +25,17 @@
 		A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* GeneratedQueueSession.swift */; };
 		A10000000000000000000012 /* QueueProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* QueueProgress.swift */; };
 		A10000000000000000000013 /* PlaylistSongSort.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* PlaylistSongSort.swift */; };
+		A10000000000000000000014 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* AppSettings.swift */; };
+		A10000000000000000000015 /* GeneratedQueueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* GeneratedQueueStore.swift */; };
+		A10000000000000000000016 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* SettingsView.swift */; };
+		A10000000000000000000017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* Localizable.xcstrings */; };
+		A10000000000000000000018 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* InfoPlist.xcstrings */; };
+		A1000000000000000000001C /* NowPlayingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001C /* NowPlayingViews.swift */; };
+		A1000000000000000000001D /* RediscoveryInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001D /* RediscoveryInsight.swift */; };
+		A1000000000000000000001E /* ColorField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001E /* ColorField.swift */; };
+		A1000000000000000000001F /* ArtworkColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001F /* ArtworkColorPalette.swift */; };
+		A10000000000000000000020 /* PlaylistCoverStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* PlaylistCoverStore.swift */; };
+		A10000000000000000000021 /* PlaylistCoverMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* PlaylistCoverMatcher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,7 +59,6 @@
 		A20000000000000000000008 /* PermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* PlaylistBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistBrowserView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
-		A2000000000000000000000B /* QueuePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueuePreviewView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000C /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		A2000000000000000000000D /* WeightedShuffleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightedShuffleEngineTests.swift; sourceTree = "<group>"; };
 		A2000000000000000000000E /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
@@ -61,6 +70,17 @@
 		A20000000000000000000014 /* GeneratedQueueSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedQueueSession.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* QueueProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueProgress.swift; sourceTree = "<group>"; };
 		A20000000000000000000016 /* PlaylistSongSort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistSongSort.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* GeneratedQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedQueueStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A2000000000000000000001B /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		A2000000000000000000001C /* NowPlayingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingViews.swift; sourceTree = "<group>"; };
+		A2000000000000000000001D /* RediscoveryInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RediscoveryInsight.swift; sourceTree = "<group>"; };
+		A2000000000000000000001E /* ColorField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorField.swift; sourceTree = "<group>"; };
+		A2000000000000000000001F /* ArtworkColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkColorPalette.swift; sourceTree = "<group>"; };
+		A20000000000000000000020 /* PlaylistCoverStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCoverStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* PlaylistCoverMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCoverMatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +138,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000004 /* MusicLibraryService.swift */,
+				A20000000000000000000020 /* PlaylistCoverStore.swift */,
 				A20000000000000000000005 /* MusicPlaybackService.swift */,
 				A20000000000000000000012 /* PinnedPlaylistStore.swift */,
 				A20000000000000000000014 /* GeneratedQueueSession.swift */,
@@ -131,6 +152,11 @@
 				A20000000000000000000003 /* WeightedShuffleEngine.swift */,
 				A20000000000000000000015 /* QueueProgress.swift */,
 				A20000000000000000000016 /* PlaylistSongSort.swift */,
+				A20000000000000000000017 /* AppSettings.swift */,
+				A20000000000000000000018 /* GeneratedQueueStore.swift */,
+				A2000000000000000000001D /* RediscoveryInsight.swift */,
+				A2000000000000000000001F /* ArtworkColorPalette.swift */,
+				A20000000000000000000021 /* PlaylistCoverMatcher.swift */,
 			);
 			path = Shuffle;
 			sourceTree = "<group>";
@@ -150,8 +176,10 @@
 				A20000000000000000000008 /* PermissionView.swift */,
 				A20000000000000000000009 /* PlaylistBrowserView.swift */,
 				A2000000000000000000000A /* PlaylistDetailView.swift */,
-				A2000000000000000000000B /* QueuePreviewView.swift */,
 				A2000000000000000000000C /* Components.swift */,
+				A20000000000000000000019 /* SettingsView.swift */,
+				A2000000000000000000001C /* NowPlayingViews.swift */,
+				A2000000000000000000001E /* ColorField.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -160,6 +188,8 @@
 			isa = PBXGroup;
 			children = (
 				A2000000000000000000000F /* Info.plist */,
+				A2000000000000000000001A /* Localizable.xcstrings */,
+				A2000000000000000000001B /* InfoPlist.xcstrings */,
 				A20000000000000000000013 /* Assets.xcassets */,
 			);
 			path = Resources;
@@ -253,6 +283,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				"zh-Hans",
 				Base,
 			);
 			mainGroup = A70000000000000000000001;
@@ -272,6 +303,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000010 /* Assets.xcassets in Resources */,
+				A10000000000000000000017 /* Localizable.xcstrings in Resources */,
+				A10000000000000000000018 /* InfoPlist.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -293,18 +326,26 @@
 				A10000000000000000000002 /* LibraryModels.swift in Sources */,
 				A10000000000000000000003 /* WeightedShuffleEngine.swift in Sources */,
 				A10000000000000000000004 /* MusicLibraryService.swift in Sources */,
+				A10000000000000000000020 /* PlaylistCoverStore.swift in Sources */,
 				A10000000000000000000005 /* MusicPlaybackService.swift in Sources */,
 				A10000000000000000000006 /* PlaylistViewModel.swift in Sources */,
 				A10000000000000000000007 /* RootView.swift in Sources */,
 				A10000000000000000000008 /* PermissionView.swift in Sources */,
 				A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */,
 				A1000000000000000000000A /* PlaylistDetailView.swift in Sources */,
-				A1000000000000000000000B /* QueuePreviewView.swift in Sources */,
 				A1000000000000000000000C /* Components.swift in Sources */,
 				A1000000000000000000000F /* PinnedPlaylistStore.swift in Sources */,
 				A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */,
 				A10000000000000000000012 /* QueueProgress.swift in Sources */,
 				A10000000000000000000013 /* PlaylistSongSort.swift in Sources */,
+				A10000000000000000000014 /* AppSettings.swift in Sources */,
+				A10000000000000000000015 /* GeneratedQueueStore.swift in Sources */,
+				A10000000000000000000016 /* SettingsView.swift in Sources */,
+				A1000000000000000000001C /* NowPlayingViews.swift in Sources */,
+				A1000000000000000000001D /* RediscoveryInsight.swift in Sources */,
+				A1000000000000000000001E /* ColorField.swift in Sources */,
+				A1000000000000000000001F /* ArtworkColorPalette.swift in Sources */,
+				A10000000000000000000021 /* PlaylistCoverMatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
