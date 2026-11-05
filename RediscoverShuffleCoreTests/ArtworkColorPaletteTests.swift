@@ -59,7 +59,7 @@ struct ArtworkColorPaletteTests {
     )
     func readableRoles(swatches: [PaletteColor]) {
         for appearance in [ArtworkColorPalette.Appearance.light, .dark] {
-            let palette = ArtworkColorPalette(swatches: swatches, fallbackAccent: Self.ember, appearance: appearance)
+            let palette = ArtworkColorPalette(swatches: swatches, fallback: Self.ember, appearance: appearance)
             let primaryText: PaletteColor = appearance == .dark ? .white : .black
             let surfaces = palette.field + [palette.ground]
 
@@ -68,28 +68,39 @@ struct ArtworkColorPaletteTests {
             for surface in surfaces {
                 #expect(primaryText.contrastRatio(with: surface) >= 7)
                 #expect(palette.secondaryText.contrastRatio(with: surface) >= 4.5)
-                #expect(palette.accentText.contrastRatio(with: surface) >= 4.5)
-                #expect(palette.accent.contrastRatio(with: surface) >= 3)
             }
-            #expect(palette.onAccent.contrastRatio(with: palette.accent) >= 4.5)
         }
     }
 
-    @Test("Grey artwork keeps a neutral page and borrows the app accent")
+    @Test(
+        "Secondary text stays grey on vivid artwork",
+        arguments: [
+            PaletteColor(red: 0.95, green: 0.45, blue: 0.1),
+            PaletteColor(red: 0.95, green: 0.3, blue: 0.55),
+            PaletteColor(red: 0.2, green: 0.8, blue: 0.3),
+        ]
+    )
+    func secondaryTextStaysGrey(swatch: PaletteColor) {
+        for appearance in [ArtworkColorPalette.Appearance.light, .dark] {
+            let palette = ArtworkColorPalette(swatches: [swatch], fallback: Self.ember, appearance: appearance)
+            #expect(palette.secondaryText.saturation <= ArtworkColorPalette.secondaryTint + 0.001)
+        }
+    }
+
+    @Test("Grey artwork keeps a neutral page")
     func monochromeArtwork() {
         let greys = [PaletteColor(red: 0.5, green: 0.5, blue: 0.5), PaletteColor(red: 0.15, green: 0.15, blue: 0.15)]
-        let palette = ArtworkColorPalette(swatches: greys, fallbackAccent: Self.ember, appearance: .dark)
+        let palette = ArtworkColorPalette(swatches: greys, fallback: Self.ember, appearance: .dark)
 
         #expect(palette.ground.saturation < 0.01)
-        #expect(Self.hueDistance(palette.accent.hue, Self.ember.hue) < 0.02)
+        #expect(palette.secondaryText.saturation < 0.01)
     }
 
     @Test("A near-black with a faint tint stays neutral")
     func faintlyTintedBlack() {
         let nearBlack = PaletteColor(red: 0.12, green: 0.1, blue: 0.12)
-        let palette = ArtworkColorPalette(swatches: [Self.ember, nearBlack], fallbackAccent: Self.ember, appearance: .dark)
+        let palette = ArtworkColorPalette(swatches: [Self.ember, nearBlack], fallback: Self.ember, appearance: .dark)
 
-        #expect(Self.hueDistance(palette.accent.hue, Self.ember.hue) < 0.02)
         #expect(palette.field.allSatisfy { $0.saturation < 0.2 || Self.hueDistance($0.hue, Self.ember.hue) < 0.1 })
     }
 
@@ -99,21 +110,11 @@ struct ArtworkColorPaletteTests {
         return min(distance, 1 - distance)
     }
 
-    @Test("The accent comes from the hue that stays most vivid")
-    func vividAccent() {
-        let orange = PaletteColor(red: 0.95, green: 0.55, blue: 0.1)
-        let red = PaletteColor(red: 0.85, green: 0.1, blue: 0.15)
-        let palette = ArtworkColorPalette(swatches: [orange, red], fallbackAccent: Self.ember, appearance: .light)
-
-        // Orange would have to darken to brown to read on a light page.
-        #expect(palette.accent.hue < 0.03 || palette.accent.hue > 0.95)
-    }
-
     @Test("A single colour still fills a varied field")
     func singleSwatchField() {
         let palette = ArtworkColorPalette(
             swatches: [PaletteColor(red: 0.2, green: 0.5, blue: 0.9)],
-            fallbackAccent: Self.ember,
+            fallback: Self.ember,
             appearance: .dark
         )
         #expect(Set(palette.field).count == 4)

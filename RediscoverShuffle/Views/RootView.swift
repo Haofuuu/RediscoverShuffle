@@ -13,14 +13,17 @@ struct RootView: View {
     @State private var isKeyboardVisible = false
     @Namespace private var nowPlayingTransition
 
-    /// Floating bars keep the same distance from the bottom edge as from the
-    /// sides, like the system's tab bar.
-    private static let floatingBarInset: CGFloat = 16
+    /// The system's floating bottom bars keep the same distance from the
+    /// bottom edge as from the sides: 27pt on iPhones with a home indicator
+    /// (7pt into the 34pt safe area), 16pt on those without one.
+    private var floatingBarInset: CGFloat {
+        max(16, bottomSafeArea - 7)
+    }
 
     /// Sits the mini player inside the home-indicator zone rather than above
     /// it; a negative value lowers it past the bottom safe area.
     private var miniPlayerBottomPadding: CGFloat {
-        Self.floatingBarInset - bottomSafeArea
+        floatingBarInset - bottomSafeArea
     }
 
     var body: some View {
@@ -41,7 +44,7 @@ struct RootView: View {
                     showsNowPlaying = true
                 }
                 .zoomSource(id: "nowPlaying", in: nowPlayingTransition)
-                .padding(.horizontal, Self.floatingBarInset)
+                .padding(.horizontal, floatingBarInset)
                 .padding(.bottom, miniPlayerBottomPadding)
                 .transition(
                     reduceMotion
@@ -59,14 +62,19 @@ struct RootView: View {
                     bottomSafeArea = inset
                 }
         }
+        // Animated through the state change rather than with `.animation` on
+        // the whole screen, which would fight the keyboard's own motion.
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            isKeyboardVisible = true
+            withAnimation(.smooth(duration: 0.25)) {
+                isKeyboardVisible = true
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            isKeyboardVisible = false
+            withAnimation(.smooth(duration: 0.25)) {
+                isKeyboardVisible = false
+            }
         }
         .animation(.smooth(duration: 0.3), value: playbackService.nowPlaying == nil)
-        .animation(.smooth(duration: 0.25), value: isKeyboardVisible)
         .sheet(isPresented: $showsNowPlaying) {
             NowPlayingSheet()
                 .zoomTransition(from: "nowPlaying", in: nowPlayingTransition)

@@ -8,9 +8,12 @@ struct PlaylistBrowserView: View {
     @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
     @State private var showsSettings = false
     @State private var showsSavedQueue = false
     @State private var showsRemoveQueueError = false
+    @State private var removeFeedbackTrigger = 0
+    @State private var pinFeedbackTrigger = 0
     @Namespace private var playlistTransition
 
     private var trimmedSearch: String {
@@ -51,10 +54,17 @@ struct PlaylistBrowserView: View {
 
     var body: some View {
         // The list stays on screen in every state, with loading and empty
-        // states laid over it. Swapping it out leaves the large title and
-        // search field attached to nothing, so they collapse or jump when the
-        // list comes back.
+        // states laid over it. Swapping it out leaves the large title
+        // attached to nothing, so it collapses or jumps when the list comes
+        // back.
         List {
+            if !libraryService.playlists.isEmpty {
+                PlaylistSearchField(text: $searchText, isFocused: $isSearchFocused)
+                    .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 10, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+
             if trimmedSearch.isEmpty,
                !libraryService.playlists.isEmpty,
                let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
@@ -92,9 +102,28 @@ struct PlaylistBrowserView: View {
                     }
                 }
             }
+
+            // Shown as a row so the search field above it stays usable.
+            if !libraryService.playlists.isEmpty, matchingPlaylists.isEmpty {
+                EmptyStateView(
+                    symbol: "magnifyingglass",
+                    title: String(localized: "No Matches"),
+                    message: String(
+                        format: String(localized: "No playlist name contains “%@”."),
+                        locale: .current,
+                        searchText
+                    ),
+                    actionTitle: nil,
+                    action: nil
+                )
+                .padding(.top, 48)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
         .refreshable {
             libraryService.refreshPlaylists()
         }
@@ -103,14 +132,7 @@ struct PlaylistBrowserView: View {
         }
         .background(Color(.systemBackground))
         .navigationTitle("Playlists")
-        // A large title that stays in the bar: with search always shown, a
-        // collapsing title starts out collapsed on iOS 27.
-        .toolbarTitleDisplayMode(.inlineLarge)
-        // Kept under the title: iOS 26 would otherwise put search at the
-        // bottom of the screen, where the mini player sits. Always shown,
-        // because a hidden field reopens its space with a jump when coming
-        // back from a playlist.
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search playlists")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if availablePinnedPlaylists.count > 1 {
@@ -150,6 +172,8 @@ struct PlaylistBrowserView: View {
                 editMode?.wrappedValue = .inactive
             }
         }
+        .sensoryFeedback(.selection, trigger: pinFeedbackTrigger)
+        .sensoryFeedback(.impact(weight: .medium), trigger: removeFeedbackTrigger)
         .onChange(of: pinnedPlaylistStore.pinnedPlaylistIDs) { _, _ in
             if availablePinnedPlaylists.count < 2 {
                 editMode?.wrappedValue = .inactive
@@ -176,18 +200,6 @@ struct PlaylistBrowserView: View {
                 message: String(localized: "Add a playlist to your library in the Music app, then refresh here."),
                 actionTitle: String(localized: "Refresh"),
                 action: libraryService.refreshPlaylists
-            )
-        } else if matchingPlaylists.isEmpty {
-            EmptyStateView(
-                symbol: "magnifyingglass",
-                title: String(localized: "No Matches"),
-                message: String(
-                    format: String(localized: "No playlist name contains “%@”."),
-                    locale: .current,
-                    searchText
-                ),
-                actionTitle: nil,
-                action: nil
             )
         }
     }
@@ -271,12 +283,16 @@ struct PlaylistBrowserView: View {
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
             showsRemoveQueueError = !generatedQueueSession.clearSavedQueue()
         }
+        if !showsRemoveQueueError {
+            removeFeedbackTrigger += 1
+        }
     }
 
     private func pinButton(for playlist: LibraryPlaylist) -> some View {
         let isPinned = pinnedPlaylistStore.isPinned(playlist.persistentIDString)
         return Button {
             pinnedPlaylistStore.toggle(playlist.persistentIDString)
+            pinFeedbackTrigger += 1
         } label: {
             Label(
                 isPinned
@@ -285,7 +301,7 @@ struct PlaylistBrowserView: View {
                 systemImage: isPinned ? "pin.slash" : "pin.fill"
             )
         }
-        .tint(Color("AccentColor"))
+        .tint(Color.ember)
     }
 }
 
@@ -353,7 +369,7 @@ private struct PlaylistRow: View {
             if isPinned {
                 Image(systemName: "pin.fill")
                     .font(.footnote)
-                    .foregroundStyle(Color("AccentColor"))
+                    .foregroundStyle(Color.ember)
                     .accessibilityHidden(true)
             }
         }
@@ -451,7 +467,7 @@ private struct ContinueQueueCard: View {
                     .font(.subheadline)
                     if let progressFraction {
                         ProgressView(value: progressFraction)
-                            .tint(Color(palette.accent))
+                            .tint(Color.ember)
                             .padding(.top, 4)
                     }
                 }
@@ -465,10 +481,11 @@ private struct ContinueQueueCard: View {
             }
             .padding(16)
             .background {
+                // Holds still inside the list: a drifting field would redraw
+                // the row every frame while the list scrolls.
                 ColorField(
                     palette: palette,
-                    arrangement: fieldArrangement,
-                    isPlaying: isLive && playbackService.isPlaying
+                    arrangement: fieldArrangement
                 )
                 .clipShape(Self.shape)
                 .shadow(color: Color(palette.ground).opacity(0.3), radius: 16, y: 8)
@@ -485,5 +502,69 @@ private struct ContinueQueueCard: View {
         .accessibilityLabel(accessibilityText)
         .accessibilityHint("Opens your most recent queue without changing its order")
         .accessibilityAction(named: "Remove", remove)
+    }
+}
+
+/// Search that sits at the top of the list and scrolls away with it, like
+/// the Music app's library. SwiftUI's own search drawer starts out hidden on
+/// iOS 27, so the field lives in the list instead.
+private struct PlaylistSearchField: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Binding var text: String
+    var isFocused: FocusState<Bool>.Binding
+
+    var body: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                TextField("Search playlists", text: $text)
+                    .focused(isFocused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .accessibilityAddTraits(.isSearchField)
+                if !text.isEmpty {
+                    Button {
+                        text = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 44, height: 36)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear Search")
+                }
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, text.isEmpty ? 12 : 0)
+            .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+            .background(Color(.tertiarySystemFill), in: Capsule())
+            .contentShape(Capsule())
+            .onTapGesture {
+                isFocused.wrappedValue = true
+            }
+
+            if isFocused.wrappedValue {
+                Button {
+                    text = ""
+                    isFocused.wrappedValue = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .frame(width: 36, height: 36)
+                        .background(Color(.tertiarySystemFill), in: Circle())
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableButtonStyle())
+                .accessibilityLabel("Cancel Search")
+                .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .frame(minHeight: 44)
+        .animation(.smooth(duration: 0.25), value: isFocused.wrappedValue)
     }
 }

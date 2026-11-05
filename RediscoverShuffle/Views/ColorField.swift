@@ -9,6 +9,11 @@ extension Color {
     init(_ color: PaletteColor) {
         self.init(.sRGB, red: color.red, green: color.green, blue: color.blue)
     }
+
+    /// The app icon's ember. It is the one accent in the app, the same in
+    /// light and dark mode, so it is used for fills and symbols; text in it
+    /// would fall below 4.5:1 on dark surfaces.
+    static let ember = Color("AccentColor")
 }
 
 extension PaletteColor {
@@ -33,8 +38,8 @@ extension ArtworkColorPalette.Appearance {
 /// steps are cached because palettes are asked for on every redraw.
 @MainActor
 enum ArtworkPalette {
-    /// The app's ember, used when artwork has no colour to offer.
-    static let fallbackAccent = PaletteColor(red: 0.784, green: 0.196, blue: 0.247)
+    /// The app icon's ember, used when artwork has no colour to offer.
+    static let ember = PaletteColor(red: 0.784, green: 0.196, blue: 0.247)
 
     private final class SwatchList {
         let colors: [PaletteColor]
@@ -58,7 +63,7 @@ enum ArtworkPalette {
     static func brand(appearance: ArtworkColorPalette.Appearance) -> ArtworkColorPalette {
         palette(
             swatches: [
-                fallbackAccent,
+                ember,
                 PaletteColor(red: 0.12, green: 0.1, blue: 0.12),
                 PaletteColor(red: 0.45, green: 0.08, blue: 0.16),
             ],
@@ -97,7 +102,7 @@ enum ArtworkPalette {
         }
         let palette = ArtworkColorPalette(
             swatches: swatches,
-            fallbackAccent: fallbackAccent,
+            fallback: ember,
             appearance: appearance
         )
         paletteCache[key] = palette
@@ -182,35 +187,21 @@ enum ArtworkPalette {
 
 // MARK: - Screen theme
 
-/// Colours that controls on a screen pick up: the app's ember by default,
-/// the artwork's own colours inside a playlist or the player.
+/// Colours that controls on a screen pick up. The accent is always the app's
+/// ember; only secondary text takes a trace of the screen's artwork.
 struct ScreenTheme {
-    var accent: Color
-    var onAccent: Color
-    var accentText: Color
+    let accent = Color.ember
+    let onAccent = Color("AccentForeground")
     var secondaryText: Color
 
-    static let standard = ScreenTheme(
-        accent: Color("AccentColor"),
-        onAccent: Color("AccentForeground"),
-        accentText: Color("AccentColor"),
-        secondaryText: Color("SecondaryText")
-    )
+    static let standard = ScreenTheme(secondaryText: Color("SecondaryText"))
 
-    init(accent: Color, onAccent: Color, accentText: Color, secondaryText: Color) {
-        self.accent = accent
-        self.onAccent = onAccent
-        self.accentText = accentText
+    init(secondaryText: Color) {
         self.secondaryText = secondaryText
     }
 
     init(_ palette: ArtworkColorPalette) {
-        self.init(
-            accent: Color(palette.accent),
-            onAccent: Color(palette.onAccent),
-            accentText: Color(palette.accentText),
-            secondaryText: Color(palette.secondaryText)
-        )
+        self.init(secondaryText: Color(palette.secondaryText))
     }
 }
 
@@ -226,10 +217,10 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// Themes buttons, badges, and secondary text with the palette's colours.
+    /// Tints secondary text with the palette; controls keep the ember.
     func screenTheme(_ palette: ArtworkColorPalette) -> some View {
         environment(\.screenTheme, ScreenTheme(palette))
-            .tint(Color(palette.accentText))
+            .tint(.ember)
     }
 }
 

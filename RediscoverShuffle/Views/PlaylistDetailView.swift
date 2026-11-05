@@ -181,7 +181,7 @@ struct PlaylistDetailView: View {
         }
         return songs
             + Text(verbatim: " · ").foregroundStyle(secondary)
-            + Text(summary).foregroundStyle(Color(palette.accentText)).fontWeight(.semibold)
+            + Text(summary).foregroundStyle(Color.primary).fontWeight(.semibold)
     }
 
     private var actionButtons: some View {
@@ -251,7 +251,7 @@ struct PlaylistDetailView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .foregroundStyle(Color(palette.accentText))
+                    .foregroundStyle(Color.ember)
                 Text(
                     String(
                         format: String(localized: "Rediscovery: %@"),
@@ -286,6 +286,9 @@ struct PlaylistDetailView: View {
                 systemImage: isPinned ? "pin.fill" : "pin"
             )
         }
+        // The ember marks a pinned playlist; unpinned it matches the back
+        // button, which also keeps it clear on deep artwork colours.
+        .tint(isPinned ? Color.ember : Color.primary)
         .sensoryFeedback(.selection, trigger: isPinned)
     }
 
@@ -344,7 +347,7 @@ struct PlaylistDetailView: View {
                         freshness: viewModel.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
                         showPlayCount: showPlayCounts
                     )
-                    .listRowBackground(isCurrent ? Color(palette.accent).opacity(0.16) : Color.clear)
+                    .listRowBackground(isCurrent ? Color.primary.opacity(0.06) : Color.clear)
                     .listRowSeparatorTint(Color.primary.opacity(0.1))
                 }
             }
@@ -466,6 +469,9 @@ struct PlaylistDetailView: View {
 @Observable
 private final class ScrollTracker {
     var offset: CGFloat = 0
+    /// The field holds still while the list moves, so scrolling never has
+    /// to share frames with the drift.
+    var isScrolling = false
 }
 
 private extension View {
@@ -474,10 +480,15 @@ private extension View {
     @ViewBuilder
     func tracksScrollOffset(in tracker: ScrollTracker) -> some View {
         if #available(iOS 18.0, *) {
+            // Past a screen's height the field is long gone, so further
+            // scrolling stops redrawing it.
             onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y + geometry.contentInsets.top
+                min(geometry.contentOffset.y + geometry.contentInsets.top, 1_000)
             } action: { _, offset in
                 tracker.offset = offset
+            }
+            .onScrollPhaseChange { _, phase in
+                tracker.isScrolling = phase.isScrolling
             }
         } else {
             self
@@ -500,7 +511,7 @@ private struct PlaylistBackdrop: View {
         ColorField(
             palette: palette,
             arrangement: arrangement,
-            isPlaying: isPlaying,
+            isPlaying: isPlaying && !scroll.isScrolling,
             fadesIntoGround: true
         )
         .frame(height: fieldHeight + max(0, -offset))

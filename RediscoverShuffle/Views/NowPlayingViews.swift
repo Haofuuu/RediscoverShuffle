@@ -1,23 +1,19 @@
 import SwiftUI
 
 /// Floating bar for whatever the system Music player is playing. It stays
-/// above every screen so playback is always one tap away, and its glass
-/// picks up a tint from the song's artwork.
+/// above every screen so playback is always one tap away. Like the system's
+/// own bars it is plain glass; the artwork brings the colour.
 struct MiniPlayerBar: View {
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var playbackService: MusicPlaybackService
     let snapshot: NowPlayingSnapshot
     let open: () -> Void
-
-    private var palette: ArtworkColorPalette {
-        ArtworkPalette.palette(for: snapshot.artwork, appearance: .init(colorScheme))
-    }
+    @State private var transportTaps = 0
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 2) {
             Button(action: open) {
                 HStack(spacing: 10) {
-                    ArtworkView(artwork: snapshot.artwork, size: 36)
+                    ArtworkView(artwork: snapshot.artwork, size: 32)
                         .id(snapshot.id)
                         .transition(.opacity)
                     VStack(alignment: .leading, spacing: 1) {
@@ -27,7 +23,7 @@ struct MiniPlayerBar: View {
                             .lineLimit(1)
                         Text(snapshot.artist)
                             .font(.footnote)
-                            .foregroundStyle(Color(palette.secondaryText))
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
@@ -41,7 +37,10 @@ struct MiniPlayerBar: View {
             )
             .accessibilityHint("Shows the player and what’s up next")
 
-            Button(action: playbackService.togglePlayPause) {
+            Button {
+                transportTaps += 1
+                playbackService.togglePlayPause()
+            } label: {
                 Image(systemName: playbackService.isPlaying ? "pause.fill" : "play.fill")
                     .font(.title3)
                     .contentTransition(.symbolEffect(.replace))
@@ -50,7 +49,10 @@ struct MiniPlayerBar: View {
             }
             .accessibilityLabel(playbackService.isPlaying ? String(localized: "Pause") : String(localized: "Play"))
 
-            Button(action: playbackService.skipToNextItem) {
+            Button {
+                transportTaps += 1
+                playbackService.skipToNextItem()
+            } label: {
                 Image(systemName: "forward.fill")
                     .font(.title3)
                     .frame(width: 44, height: 44)
@@ -60,27 +62,25 @@ struct MiniPlayerBar: View {
         }
         .buttonStyle(PressableButtonStyle())
         .foregroundStyle(Color.primary)
-        .padding(.leading, 6)
-        .padding(.trailing, 4)
-        .padding(.vertical, 6)
-        .floatingBarBackground(tint: Color(palette.field[0]))
+        // The artwork sits clear of the rounded end, as in Music's mini player.
+        .padding(.leading, 16)
+        .padding(.trailing, 8)
+        .padding(.vertical, 2)
+        .floatingBarBackground()
         .animation(.easeInOut(duration: 0.3), value: snapshot.id)
+        .sensoryFeedback(.impact(weight: .light), trigger: transportTaps)
     }
 }
 
-/// A capsule like the system's floating bars, so the artwork inset matches
-/// the rounded ends.
+/// A capsule of plain glass, like the system's floating bars.
 private struct FloatingBarBackground: ViewModifier {
-    let tint: Color
-
     func body(content: Content) -> some View {
         let shape = Capsule(style: .continuous)
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular.tint(tint.opacity(0.45)), in: shape)
+            content.glassEffect(.regular, in: shape)
         } else {
             content
                 .background(.regularMaterial, in: shape)
-                .background(tint.opacity(0.5), in: shape)
                 .overlay { shape.strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5) }
                 .shadow(color: .black.opacity(0.14), radius: 18, y: 8)
         }
@@ -88,8 +88,8 @@ private struct FloatingBarBackground: ViewModifier {
 }
 
 private extension View {
-    func floatingBarBackground(tint: Color) -> some View {
-        modifier(FloatingBarBackground(tint: tint))
+    func floatingBarBackground() -> some View {
+        modifier(FloatingBarBackground())
     }
 }
 
@@ -105,6 +105,7 @@ struct NowPlayingSheet: View {
     @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
     /// Artwork fills the column, so it is sized from the width rather than
     /// Dynamic Type and never overflows a small phone.
+    @State private var transportTaps = 0
     @State private var contentWidth: CGFloat = 320
 
     private var liveQueue: PlaylistViewModel? {
@@ -150,11 +151,14 @@ struct NowPlayingSheet: View {
                 .ignoresSafeArea()
             }
             .navigationBarTitleDisplayMode(.inline)
+            // White on the artwork's colours: the ember would sink into a
+            // dark red or green room.
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
                     }
+                    .tint(.primary)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -164,6 +168,7 @@ struct NowPlayingSheet: View {
                     } label: {
                         Label("Open Music", systemImage: "arrow.up.forward.app")
                     }
+                    .tint(.primary)
                 }
             }
         }
@@ -232,6 +237,7 @@ struct NowPlayingSheet: View {
             .foregroundStyle(Color.primary)
             .padding(.horizontal, 28)
             .padding(.top, 12)
+            .sensoryFeedback(.impact(weight: .light), trigger: transportTaps)
         }
         .animation(.smooth(duration: 0.5), value: snapshot.id)
         .padding(.horizontal, 28)
@@ -250,7 +256,10 @@ struct NowPlayingSheet: View {
         label: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button {
+            transportTaps += 1
+            action()
+        } label: {
             Image(systemName: systemImage)
                 .font(.system(size: size))
                 .contentTransition(.symbolEffect(.replace))

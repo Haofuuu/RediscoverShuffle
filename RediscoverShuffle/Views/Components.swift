@@ -32,14 +32,16 @@ struct PrimaryActionButtonStyle: ButtonStyle {
     private var foreground: Color {
         switch prominence {
         case .filled: theme.onAccent
-        case .tinted: theme.accentText
+        case .tinted: .primary
         }
     }
 
+    /// The second button is neutral rather than a pale wash of the ember, so
+    /// the ember appears at full strength or not at all.
     private var background: Color {
         switch prominence {
         case .filled: theme.accent
-        case .tinted: theme.accent.opacity(0.16)
+        case .tinted: .primary.opacity(0.08)
         }
     }
 }
@@ -188,14 +190,14 @@ struct PlaylistArtworkView: View {
         guard playlist.coverArtworks.count >= 4 else {
             return nil
         }
-        let tileSize = CGSize(width: size / 2, height: size / 2)
-        let images = playlist.coverArtworks.prefix(4).compactMap { $0.image(at: tileSize) }
+        let images = playlist.coverArtworks.prefix(4).compactMap {
+            ArtworkImageCache.image(for: $0, side: size / 2)
+        }
         return images.count == 4 ? images : nil
     }
 
     private var singleImage: UIImage? {
-        let side = CGSize(width: size, height: size)
-        return playlist.coverArtworks.lazy.compactMap { $0.image(at: side) }.first
+        playlist.coverArtworks.lazy.compactMap { ArtworkImageCache.image(for: $0, side: size) }.first
     }
 
     private func tile(_ image: UIImage, size: CGFloat) -> some View {
@@ -250,7 +252,7 @@ struct ArtworkView: View {
 
     var body: some View {
         Group {
-            if let image = artwork?.image(at: CGSize(width: size, height: size)) {
+            if let artwork, let image = ArtworkImageCache.image(for: artwork, side: size) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -266,6 +268,46 @@ struct ArtworkView: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: artworkCornerRadius(for: size), style: .continuous))
         .accessibilityHidden(true)
+    }
+}
+
+/// Decoded artwork, kept so lists don't decode the same covers again on every
+/// redraw, such as each frame of a scroll or a playback update.
+@MainActor
+enum ArtworkImageCache {
+    private final class Sizes {
+        var images: [Int: UIImage] = [:]
+        var missing: Set<Int> = []
+    }
+
+    private static let cache: NSCache<MPMediaItemArtwork, Sizes> = {
+        let cache = NSCache<MPMediaItemArtwork, Sizes>()
+        cache.countLimit = 500
+        return cache
+    }()
+
+    static func image(for artwork: MPMediaItemArtwork, side: CGFloat) -> UIImage? {
+        let key = Int(side.rounded(.up))
+        let sizes: Sizes
+        if let cached = cache.object(forKey: artwork) {
+            sizes = cached
+        } else {
+            sizes = Sizes()
+            cache.setObject(sizes, forKey: artwork)
+        }
+        if let image = sizes.images[key] {
+            return image
+        }
+        guard !sizes.missing.contains(key) else {
+            return nil
+        }
+        let image = artwork.image(at: CGSize(width: side, height: side))
+        if let image {
+            sizes.images[key] = image
+        } else {
+            sizes.missing.insert(key)
+        }
+        return image
     }
 }
 
@@ -297,14 +339,15 @@ struct FreshnessBadge: View {
             if let systemImage {
                 Image(systemName: systemImage)
                     .imageScale(.small)
+                    .foregroundStyle(theme.accent)
             }
             Text(title)
+                .foregroundStyle(.primary)
         }
         .font(.caption2.weight(.semibold))
-        .foregroundStyle(theme.accentText)
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
-        .background(theme.accent.opacity(0.14), in: Capsule())
+        .background(.primary.opacity(0.08), in: Capsule())
         .fixedSize()
         .accessibilityHidden(true)
     }
@@ -324,7 +367,7 @@ struct NowPlayingIndicator: View {
                 options: .repeating,
                 isActive: isPlaying && !reduceMotion
             )
-            .foregroundStyle(theme.accentText)
+            .foregroundStyle(theme.accent)
             .accessibilityHidden(true)
     }
 }
@@ -363,7 +406,7 @@ struct TrackRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title)
                     .font(.body.weight(isCurrent ? .semibold : .regular))
-                    .foregroundStyle(isCurrent ? theme.accentText : Color.primary)
+                    .foregroundStyle(Color.primary)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 Text(subtitle)
                     .font(.subheadline)

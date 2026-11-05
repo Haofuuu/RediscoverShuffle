@@ -24,6 +24,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                .sensoryFeedback(.selection, trigger: appearanceRawValue)
             }
 
             Section {

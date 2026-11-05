@@ -36,7 +36,7 @@ struct PermissionView: View {
                         RoundedRectangle(cornerRadius: min(iconSize, 112) * 0.2237, style: .continuous)
                             .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
                     }
-                    .shadow(color: Color("AccentColor").opacity(0.35), radius: 22, y: 10)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.16), radius: 22, y: 10)
                     .accessibilityHidden(true)
                     .entrance(order: 0, isVisible: hasAppeared)
 
@@ -177,7 +177,7 @@ struct PermissionView: View {
         HStack(alignment: .firstTextBaseline, spacing: 14) {
             Image(systemName: systemImage)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(Color(palette.accentText))
+                .foregroundStyle(Color.ember)
                 .frame(width: 26)
                 .accessibilityHidden(true)
             Text(title)

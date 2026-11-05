@@ -19,7 +19,7 @@ struct RediscoverShuffleApp: App {
                 .environmentObject(pinnedPlaylistStore)
                 .environmentObject(generatedQueueSession)
                 .environmentObject(playlistCoverStore)
-                .tint(Color("AccentColor"))
+                .tint(.ember)
                 .background {
                     WindowAppearance(style: interfaceStyle)
                 }

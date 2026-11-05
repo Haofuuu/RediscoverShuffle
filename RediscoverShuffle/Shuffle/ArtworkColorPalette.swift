@@ -170,8 +170,9 @@ enum ArtworkSwatches {
 }
 
 /// Colour roles for a screen themed by its artwork: a moving field, the calm
-/// page it fades into, an accent for controls, and secondary text that stays
-/// readable on all of them.
+/// page it fades into, and secondary text that stays readable on both.
+/// Controls don't take their colour from here: every screen shares the app
+/// icon's ember, so the artwork sets the room, not the buttons.
 struct ArtworkColorPalette: Equatable, Sendable {
     enum Appearance: Sendable {
         case light
@@ -181,16 +182,13 @@ struct ArtworkColorPalette: Equatable, Sendable {
     /// Four colours for the field, tuned so primary text reads on each.
     let field: [PaletteColor]
     let ground: PaletteColor
-    /// Fill for primary controls.
-    let accent: PaletteColor
-    /// Text and icons drawn on `accent`.
-    let onAccent: PaletteColor
-    /// The accent hue, deepened or lightened until it reads as body text.
-    let accentText: PaletteColor
+    /// A grey with a trace of the artwork's hue, so it sits in the room
+    /// without reading as a second accent.
     let secondaryText: PaletteColor
 
-    init(swatches: [PaletteColor], fallbackAccent: PaletteColor, appearance: Appearance) {
-        let sources = swatches.isEmpty ? [fallbackAccent] : swatches
+    /// `fallback` stands in for artwork that has no colours of its own.
+    init(swatches: [PaletteColor], fallback: PaletteColor, appearance: Appearance) {
+        let sources = swatches.isEmpty ? [fallback] : swatches
         let colorful = sources.filter { !$0.isNeutral }
         let tintSource = colorful.first ?? sources[0]
         let isMonochrome = colorful.isEmpty
@@ -238,52 +236,25 @@ struct ArtworkColorPalette: Equatable, Sendable {
             surfaces.allSatisfy { candidate.contrastRatio(with: $0) >= ratio }
         }
 
-        // The accent fills buttons, so it needs the 3:1 of a control. Some
-        // hues lose their colour reaching that (orange turns brown on a light
-        // page), so every candidate is tuned and the most vivid result wins.
-        let tunedAccents = (colorful.isEmpty ? [fallbackAccent] : colorful).map { source in
-            switch appearance {
-            case .dark:
-                Self.adjusted(
-                    source.with(saturation: min(max(source.saturation, 0.5), 0.8), brightness: 0.96),
-                    until: { reads($0, at: 3) },
-                    step: { $0.with(saturation: $0.saturation - 0.03) }
-                )
-            case .light:
-                Self.adjusted(
-                    source.with(saturation: min(max(source.saturation, 0.75), 0.9), brightness: 0.62),
-                    until: { reads($0, at: 3) },
-                    step: { $0.with(brightness: $0.brightness - 0.03) }
-                )
-            }
-        }
-        // `max` keeps the first of equals, so prominence breaks ties.
-        accent = tunedAccents.max { $0.saturation * $0.brightness < $1.saturation * $1.brightness } ?? fallbackAccent
-
-        // Text in the accent hue needs the full 4.5:1 of body text.
-        accentText = switch appearance {
-        case .dark:
-            Self.adjusted(accent, until: { reads($0, at: 4.5) }, step: { $0.with(saturation: $0.saturation - 0.03) })
-        case .light:
-            Self.adjusted(accent, until: { reads($0, at: 4.5) }, step: { $0.with(brightness: $0.brightness - 0.03) })
-        }
-        onAccent = accent.contrastRatio(with: .white) >= accent.contrastRatio(with: .black) ? .white : .black
-
         secondaryText = switch appearance {
         case .dark:
             Self.adjusted(
-                PaletteColor(hue: tintSource.hue, saturation: min(tintSource.saturation, 0.2), brightness: 0.8),
+                PaletteColor(hue: tintSource.hue, saturation: min(tintSource.saturation, Self.secondaryTint), brightness: 0.8),
                 until: { reads($0, at: 4.5) },
-                step: { $0.with(saturation: $0.saturation - 0.03, brightness: $0.brightness + 0.03) }
+                step: { $0.with(saturation: $0.saturation - 0.02, brightness: $0.brightness + 0.03) }
             )
         case .light:
             Self.adjusted(
-                PaletteColor(hue: tintSource.hue, saturation: min(tintSource.saturation, 0.45), brightness: 0.4),
+                PaletteColor(hue: tintSource.hue, saturation: min(tintSource.saturation, Self.secondaryTint), brightness: 0.4),
                 until: { reads($0, at: 4.5) },
                 step: { $0.with(brightness: $0.brightness - 0.03) }
             )
         }
     }
+
+    /// The most colour secondary text may carry. Above this it starts to read
+    /// as pink, orange, or green text rather than grey.
+    static let secondaryTint = 0.12
 
     /// Keeps the artwork's hue but holds brightness in a band where primary
     /// text stays comfortably readable: deep in dark mode, airy in light mode.
