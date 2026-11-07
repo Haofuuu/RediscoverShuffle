@@ -5,7 +5,6 @@ enum SettingsKeys {
     static let rediscoveryStrength = "rediscoveryStrength"
     static let playlistSongSortOption = "playlistSongSortOption"
     static let showPlayCounts = "showPlayCounts"
-    static let lastSelectedPlaylistID = "lastSelectedPlaylistPersistentID"
     static let hasShownOnboarding = "hasShownOnboarding"
     static let pinnedPlaylistIDs = "pinnedPlaylistPersistentIDs"
 }

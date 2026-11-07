@@ -192,12 +192,112 @@
         }
       }
     },
+    "Changes take effect on your next Reshuffle." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改将在下次“重新随机排序”时生效。"
+          }
+        }
+      }
+    },
     "Clear Search" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除搜索"
+          }
+        }
+      }
+    },
+    "Empty Playlists" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空播放列表"
+          }
+        }
+      }
+    },
+    "Every order is still random." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个顺序仍然是随机的。"
+          }
+        }
+      }
+    },
+    "Explains unplayed and overlooked songs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说明未播放和被忽略的歌曲"
+          }
+        }
+      }
+    },
+    "How Rediscovery Works" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾的运作方式"
+          }
+        }
+      }
+    },
+    "More Options" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多选项"
+          }
+        }
+      }
+    },
+    "New order, not playing yet. Tap Play to start it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新顺序尚未开始播放。轻点“播放”即可开始。"
+          }
+        }
+      }
+    },
+    "Played, but no more than a quarter as often as this playlist’s typical song." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放过，但播放次数不超过此播放列表中一般歌曲的四分之一。"
+          }
+        }
+      }
+    },
+    "Rediscovery strength and song sort are set on each playlist’s screen." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重拾强度和歌曲排序可在各个播放列表页面中设置。"
+          }
+        }
+      }
+    },
+    "Songs you’ve never played." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从未播放过的歌曲。"
           }
         }
       }
@@ -741,26 +841,6 @@
         }
       }
     },
-    "last opened" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上次打开"
-          }
-        }
-      }
-    },
-    "Last opened" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上次打开"
-          }
-        }
-      }
-    },
     "Less-played songs are more likely to come first. Every shuffle stays random." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -768,16 +848,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "较少播放的歌曲更有机会排在前面，每次排列仍然是随机的。"
-          }
-        }
-      }
-    },
-    "Less-played songs lead the queue by" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "较少播放的歌曲靠前程度"
           }
         }
       }
@@ -1845,16 +1915,6 @@
         }
       }
     },
-    "Shuffle" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "随机排序"
-          }
-        }
-      }
-    },
     "Shuffle and Play" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1909,16 +1969,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "第 %1$lld 首，共 %2$lld 首"
-          }
-        }
-      }
-    },
-    "Song Sort" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歌曲排序"
           }
         }
       }

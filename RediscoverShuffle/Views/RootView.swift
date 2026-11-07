@@ -11,7 +11,6 @@ struct RootView: View {
     @State private var showsNowPlaying = false
     @State private var bottomSafeArea: CGFloat = 0
     @State private var isKeyboardVisible = false
-    @Namespace private var nowPlayingTransition
 
     /// The system's floating bottom bars keep the same distance from the
     /// bottom edge as from the sides: 27pt on iPhones with a home indicator
@@ -34,6 +33,8 @@ struct RootView: View {
                 PermissionView()
             }
         }
+        // Set on the screens only: the full player's own field keeps moving.
+        .environment(\.isCoveredBySheet, showsNowPlaying)
         .floatingBottomBar {
             // Like the system's bottom bars, the mini player stays behind the
             // keyboard while search is being typed.
@@ -43,7 +44,6 @@ struct RootView: View {
                 MiniPlayerBar(snapshot: snapshot) {
                     showsNowPlaying = true
                 }
-                .zoomSource(id: "nowPlaying", in: nowPlayingTransition)
                 .padding(.horizontal, floatingBarInset)
                 .padding(.bottom, miniPlayerBottomPadding)
                 .transition(
@@ -77,7 +77,6 @@ struct RootView: View {
         .animation(.smooth(duration: 0.3), value: playbackService.nowPlaying == nil)
         .sheet(isPresented: $showsNowPlaying) {
             NowPlayingSheet()
-                .zoomTransition(from: "nowPlaying", in: nowPlayingTransition)
         }
         .task {
             libraryService.synchronizeAuthorizationAndLoad()

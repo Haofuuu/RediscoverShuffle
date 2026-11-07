@@ -90,7 +90,7 @@ struct PaletteColor: Hashable, Sendable {
     /// Greys, near-blacks, and near-whites. Chroma is checked as well as
     /// saturation because saturation exaggerates the faint tint of very
     /// dark colours.
-    fileprivate var isNeutral: Bool {
+    var isNeutral: Bool {
         saturation < 0.15 || max(red, green, blue) - min(red, green, blue) < 0.08
     }
 

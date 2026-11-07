@@ -78,13 +78,25 @@ extension View {
     func pressFeedback(isPressed: Bool) -> some View {
         modifier(PressFeedbackModifier(isPressed: isPressed))
     }
+
+    /// A pane of glass on iOS 26 and later, so the page's colours show
+    /// through; a material with a hairline edge before that.
+    @ViewBuilder
+    func glassPane(in shape: some InsettableShape) -> some View {
+        if #available(iOS 26.0, *) {
+            glassEffect(.regular, in: shape)
+        } else {
+            background(.regularMaterial, in: shape)
+                .overlay { shape.strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5) }
+        }
+    }
 }
 
 // MARK: - Transitions
 
 extension View {
     /// Marks the view a zoom transition grows from. Zoom transitions need
-    /// iOS 18; earlier versions keep the standard push or sheet.
+    /// iOS 18; earlier versions keep the standard push.
     @ViewBuilder
     func zoomSource(id: some Hashable, in namespace: Namespace.ID) -> some View {
         if #available(iOS 18.0, *) {
@@ -94,13 +106,190 @@ extension View {
         }
     }
 
-    /// Presents this screen by zooming out of the matching `zoomSource`.
+    /// Presents this screen by zooming out of the matching `zoomSource`, or
+    /// with the standard push before iOS 18. Once the screen starts going
+    /// away, it takes no taps.
     @ViewBuilder
     func zoomTransition(from id: some Hashable, in namespace: Namespace.ID) -> some View {
+        let guarded = modifier(LeavingScreenGuard())
         if #available(iOS 18.0, *) {
-            navigationTransition(.zoom(sourceID: id, in: namespace))
+            guarded.navigationTransition(.zoom(sourceID: id, in: namespace))
         } else {
-            self
+            guarded
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// Whether a zoomed screen is settled, for its buttons to check when
+    /// tapped.
+    @Entry var screenArrival: ScreenArrival?
+}
+
+/// Whether a screen is settled: from the start of a fresh opening until it
+/// is grabbed to be swiped away or starts going away. A plain object rather
+/// than SwiftUI state: once SwiftUI starts removing a screen it stops
+/// updating it, so new state never reaches the screen's buttons, but a
+/// button can still read this the moment it is tapped.
+@MainActor
+final class ScreenArrival {
+    fileprivate(set) var isSettled = false
+}
+
+/// SwiftUI's zoom is interruptible: taps keep working while a screen zooms,
+/// so tapping the playlist again reopens it and tapping anything else on the
+/// main page goes where it was aimed. A screen that is going away must not
+/// answer any of those taps, or its buttons and popovers would turn up over
+/// the main page.
+///
+/// A screen can go away two ways: popped after it arrived, or swiped away
+/// while still zooming open, which cancels the opening and never pops it.
+/// SwiftUI stops updating a screen it removes, so `isPresented`,
+/// `allowsHitTesting`, and state changes arrive too late. This follows UIKit
+/// instead: the screen counts as settled only between arriving and starting
+/// to leave, and once it is going away its view stops taking touches (for a
+/// swipe, once the finger lets go). A cancelled pop gives them back.
+private struct LeavingScreenGuard: ViewModifier {
+    @State private var arrival = ScreenArrival()
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.screenArrival, arrival)
+            .background {
+                ScreenTransitionObserver(arrival: arrival)
+                    .accessibilityHidden(true)
+            }
+    }
+}
+
+private struct ScreenTransitionObserver: UIViewControllerRepresentable {
+    let arrival: ScreenArrival
+
+    func makeUIViewController(context: Context) -> Controller {
+        Controller(arrival: arrival)
+    }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {}
+
+    final class Controller: UIViewController {
+        private let arrival: ScreenArrival
+        /// The screen whose touches this switched off, to give them back.
+        private weak var heldScreen: UIViewController?
+
+        init(arrival: ScreenArrival) {
+            self.arrival = arrival
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) is not supported")
+        }
+
+        override func loadView() {
+            view = UIView()
+            view.isUserInteractionEnabled = false
+        }
+
+        /// The navigation stack's child that holds this screen.
+        private var screen: UIViewController? {
+            guard let navigationController else {
+                return nil
+            }
+            return sequence(first: self as UIViewController, next: \.parent)
+                .first { $0.parent === navigationController }
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            arrival.isSettled = false
+            guard let screen,
+                  let coordinator = transitionCoordinator,
+                  coordinator.viewController(forKey: .to) === screen else {
+                // Not a fresh opening, such as a cancelled swipe back: the
+                // screen settles once it is fully back.
+                return
+            }
+            // A screen zooming open takes taps, but it can still be grabbed
+            // and swiped away, which cancels the opening instead of popping
+            // it. Once grabbed its buttons wait, and if the swipe cancels the
+            // opening its touches stop at the moment the finger lets go.
+            arrival.isSettled = true
+            coordinator.notifyWhenInteractionChanges { [weak self, weak screen] context in
+                MainActor.assumeIsolated {
+                    if context.isInteractive {
+                        self?.arrival.isSettled = false
+                    } else if context.isCancelled {
+                        self?.stopTouches(on: screen)
+                    } else {
+                        self?.settle()
+                    }
+                }
+            }
+            coordinator.animate(alongsideTransition: nil) { [weak self, weak screen] context in
+                guard context.isCancelled else {
+                    return
+                }
+                MainActor.assumeIsolated {
+                    self?.stopTouches(on: screen)
+                }
+            }
+        }
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            settle()
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            // SwiftUI's screens never report `isMovingFromParent`, but a
+            // screen being popped has already left the stack's list.
+            guard let navigationController,
+                  let screen,
+                  !navigationController.viewControllers.contains(where: { $0 === screen }) else {
+                return
+            }
+            arrival.isSettled = false
+
+            guard let coordinator = transitionCoordinator else {
+                stopTouches(on: screen)
+                return
+            }
+            if coordinator.isInteractive {
+                // The finger driving a swipe back stays in charge until it
+                // lets go.
+                coordinator.notifyWhenInteractionChanges { [weak self, weak screen] context in
+                    guard !context.isCancelled else {
+                        return
+                    }
+                    MainActor.assumeIsolated {
+                        self?.stopTouches(on: screen)
+                    }
+                }
+            } else {
+                stopTouches(on: screen)
+            }
+            coordinator.animate(alongsideTransition: nil) { [weak self] context in
+                guard context.isCancelled else {
+                    return
+                }
+                MainActor.assumeIsolated {
+                    self?.settle()
+                }
+            }
+        }
+
+        private func stopTouches(on screen: UIViewController?) {
+            arrival.isSettled = false
+            screen?.view.isUserInteractionEnabled = false
+            heldScreen = screen
+        }
+
+        private func settle() {
+            arrival.isSettled = true
+            heldScreen?.view.isUserInteractionEnabled = true
+            heldScreen = nil
         }
     }
 }
@@ -319,18 +508,29 @@ private func artworkCornerRadius(for size: CGFloat) -> CGFloat {
 
 // MARK: - Rediscovery
 
+extension PlayFreshness {
+    /// The name every screen gives this kind of song; familiar songs have none.
+    var title: String? {
+        switch self {
+        case .unplayed: String(localized: "Unplayed")
+        case .overlooked: String(localized: "Overlooked")
+        case .familiar: nil
+        }
+    }
+
+    /// Unplayed songs carry the sparkle wherever they are counted.
+    var systemImage: String? {
+        self == .unplayed ? "sparkle" : nil
+    }
+}
+
 struct FreshnessBadge: View {
     @Environment(\.screenTheme) private var theme
     let freshness: PlayFreshness
 
     var body: some View {
-        switch freshness {
-        case .unplayed:
-            badge(String(localized: "Unplayed"), systemImage: "sparkle")
-        case .overlooked:
-            badge(String(localized: "Overlooked"), systemImage: nil)
-        case .familiar:
-            EmptyView()
+        if let title = freshness.title {
+            badge(title, systemImage: freshness.systemImage)
         }
     }
 
@@ -354,20 +554,23 @@ struct FreshnessBadge: View {
 }
 
 /// Animated waveform for the playing song. It holds still when paused or when
-/// Reduce Motion is on.
+/// Reduce Motion is on. It is drawn in the text colour, at a size that reads
+/// as clearly as the row number it replaces; the ember was too faint on the
+/// deep artwork colours it often sits on.
 struct NowPlayingIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.screenTheme) private var theme
     let isPlaying: Bool
 
     var body: some View {
         Image(systemName: "waveform")
+            .imageScale(.large)
+            .fontWeight(.semibold)
             .symbolEffect(
                 .variableColor.iterative,
                 options: .repeating,
                 isActive: isPlaying && !reduceMotion
             )
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(.primary)
             .accessibilityHidden(true)
     }
 }
@@ -456,10 +659,8 @@ struct TrackRow: View {
         if showPlayCount, freshness != .unplayed {
             parts.append(localizedPlayCount(entry.playCount))
         }
-        switch freshness {
-        case .unplayed: parts.append(String(localized: "Unplayed"))
-        case .overlooked: parts.append(String(localized: "Overlooked"))
-        case .familiar: break
+        if let title = freshness.title {
+            parts.append(title)
         }
         return parts.joined(separator: String(localized: ", "))
     }
@@ -510,17 +711,21 @@ func localizedPlayCount(_ count: Int) -> String {
     )
 }
 
+func localizedUnplayedCount(_ count: Int) -> String {
+    String(format: String(localized: "%lld unplayed"), locale: .current, Int64(count))
+}
+
+func localizedOverlookedCount(_ count: Int) -> String {
+    String(format: String(localized: "%lld overlooked"), locale: .current, Int64(count))
+}
+
 func localizedRediscoverySummary(_ insight: RediscoveryInsight) -> String? {
     var parts: [String] = []
     if insight.unplayedCount > 0 {
-        parts.append(
-            String(format: String(localized: "%lld unplayed"), locale: .current, Int64(insight.unplayedCount))
-        )
+        parts.append(localizedUnplayedCount(insight.unplayedCount))
     }
     if insight.overlookedCount > 0 {
-        parts.append(
-            String(format: String(localized: "%lld overlooked"), locale: .current, Int64(insight.overlookedCount))
-        )
+        parts.append(localizedOverlookedCount(insight.overlookedCount))
     }
     return parts.isEmpty ? nil : parts.joined(separator: " · ")
 }

@@ -56,6 +56,7 @@ enum ArtworkPalette {
 
     private static let swatchCache = NSCache<MPMediaItemArtwork, SwatchList>()
     private static var paletteCache: [PaletteKey: ArtworkColorPalette] = [:]
+    private static var songSwatches: [MPMediaEntityPersistentID: [PaletteColor]] = [:]
 
     /// The app icon's world: ember glowing out of near-black, with a deep
     /// wine between them. Used where there is no artwork yet, such as
@@ -75,18 +76,50 @@ enum ArtworkPalette {
     /// matches the cover on screen rather than the songs behind it.
     static func palette(
         for playlist: LibraryPlaylist,
-        coverSwatches: [PaletteColor]? = nil,
+        coverSwatches: [PaletteColor]?,
         appearance: ArtworkColorPalette.Appearance
     ) -> ArtworkColorPalette {
         let swatches = coverSwatches.flatMap { $0.isEmpty ? nil : $0 } ?? swatches(for: playlist)
         return palette(swatches: swatches, appearance: appearance)
     }
 
+    /// The quiet room shown when nothing is playing.
+    static func fallback(appearance: ArtworkColorPalette.Appearance) -> ArtworkColorPalette {
+        palette(swatches: [], appearance: appearance)
+    }
+
+    /// A song keeps the same colours every time its player opens. iOS hands
+    /// out a fresh artwork object for each playback update, sometimes a flat
+    /// stand-in while the real cover loads, so the colours are remembered
+    /// per song; flat greys give way only once the real cover shows colour.
     static func palette(
-        for artwork: MPMediaItemArtwork?,
+        forSong id: MPMediaEntityPersistentID,
+        artwork: MPMediaItemArtwork?,
         appearance: ArtworkColorPalette.Appearance
     ) -> ArtworkColorPalette {
-        palette(swatches: artwork.map(swatches(of:)) ?? [], appearance: appearance)
+        palette(swatches: swatches(forSong: id, artwork: artwork), appearance: appearance)
+    }
+
+    private static func swatches(
+        forSong id: MPMediaEntityPersistentID,
+        artwork: MPMediaItemArtwork?
+    ) -> [PaletteColor] {
+        let known = songSwatches[id]
+        if let known, known.contains(where: { !$0.isNeutral }) {
+            return known
+        }
+        let fresh = artwork.map(swatches(of:)) ?? []
+        guard !fresh.isEmpty else {
+            return known ?? []
+        }
+        if let known, fresh.allSatisfy(\.isNeutral) {
+            return known
+        }
+        if songSwatches.count >= 200 {
+            songSwatches.removeAll()
+        }
+        songSwatches[id] = fresh
+        return fresh
     }
 
     private static func palette(
@@ -152,7 +185,7 @@ enum ArtworkPalette {
     }
 
     private static func extractSwatches(from artwork: MPMediaItemArtwork) -> [PaletteColor] {
-        guard let image = artwork.image(at: CGSize(width: 48, height: 48)) else {
+        guard let image = artwork.image(at: CGSize(width: 96, height: 96)) else {
             return []
         }
         return extractSwatches(from: image)
@@ -176,6 +209,9 @@ enum ArtworkPalette {
             ) else {
                 return false
             }
+            // Averaging rather than picking pixels gives the same colours
+            // whatever size of the cover iOS returns.
+            context.interpolationQuality = .high
             UIGraphicsPushContext(context)
             image.draw(in: CGRect(x: 0, y: 0, width: side, height: side))
             UIGraphicsPopContext()
@@ -226,12 +262,19 @@ extension View {
 
 // MARK: - Colour field
 
+extension EnvironmentValues {
+    /// True under a sheet such as the full player or Settings, where a
+    /// drifting field would animate unseen.
+    @Entry var isCoveredBySheet = false
+}
+
 /// The app's signature surface: artwork colours as a slowly shifting field.
 /// It drifts only while music plays and holds still with Reduce Motion.
 /// Changing `arrangement` deals the colours into a new layout, so a
 /// reshuffle visibly reshuffles the room.
 struct ColorField: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isCoveredBySheet) private var isCoveredBySheet
     @Environment(\.colorScheme) private var colorScheme
     let palette: ArtworkColorPalette
     var arrangement = 0
@@ -242,9 +285,9 @@ struct ColorField: View {
     @State private var isOnScreen = false
 
     /// Drifting is decoration, so it stops for Reduce Motion and whenever the
-    /// field is off screen, such as under a pushed playlist.
+    /// field can't be seen: under a pushed playlist or under a sheet.
     private var drifts: Bool {
-        isPlaying && isOnScreen && !reduceMotion
+        isPlaying && isOnScreen && !isCoveredBySheet && !reduceMotion
     }
 
     var body: some View {
@@ -284,6 +327,67 @@ struct ColorField: View {
             isOnScreen = false
         }
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Scrolling backdrop
+
+/// Scroll position for a backdrop. It lives outside the view's own state so
+/// scrolling redraws only the backdrop, not the list.
+@MainActor
+@Observable
+final class ScrollTracker {
+    var offset: CGFloat = 0
+    /// The field holds still while the list moves, so scrolling never has
+    /// to share frames with the drift.
+    var isScrolling = false
+}
+
+extension View {
+    /// Reports how far the list has scrolled. iOS 17 cannot read this, so
+    /// the backdrop stays put there instead of scrolling with the header.
+    @ViewBuilder
+    func tracksScrollOffset(in tracker: ScrollTracker) -> some View {
+        if #available(iOS 18.0, *) {
+            // Past a screen's height the field is long gone, so further
+            // scrolling stops redrawing it.
+            onScrollGeometryChange(for: CGFloat.self) { geometry in
+                min(geometry.contentOffset.y + geometry.contentInsets.top, 1_000)
+            } action: { _, offset in
+                tracker.offset = offset
+            }
+            .onScrollPhaseChange { _, phase in
+                tracker.isScrolling = phase.isScrolling
+            }
+        } else {
+            self
+        }
+    }
+}
+
+/// A colour field behind a screen's header, fading into its ground colour
+/// beneath the list. It scrolls away with the header and stretches when the
+/// list is pulled down.
+struct ScrollingFieldBackdrop: View {
+    let palette: ArtworkColorPalette
+    let arrangement: Int
+    let isPlaying: Bool
+    let fieldHeight: CGFloat
+    let scroll: ScrollTracker
+
+    var body: some View {
+        let offset = scroll.offset
+        ColorField(
+            palette: palette,
+            arrangement: arrangement,
+            isPlaying: isPlaying && !scroll.isScrolling,
+            fadesIntoGround: true
+        )
+        .frame(height: fieldHeight + max(0, -offset))
+        .offset(y: -max(0, offset))
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Color(palette.ground))
+        .ignoresSafeArea()
     }
 }
 

@@ -8,8 +8,6 @@ struct SettingsView: View {
     @EnvironmentObject private var libraryService: MusicLibraryService
 
     @AppStorage(SettingsKeys.appearance) private var appearanceRawValue = AppAppearance.defaultValue.rawValue
-    @AppStorage(SettingsKeys.rediscoveryStrength) private var rediscoveryStrength = RediscoveryStrengthSetting.defaultValue
-    @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
     @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
 
     private let metadata = AppMetadata()
@@ -28,33 +26,11 @@ struct SettingsView: View {
             }
 
             Section {
-                Picker(selection: strengthBinding) {
-                    ForEach(RediscoveryStrengthSetting.allowedValues, id: \.self) { value in
-                        Text(RediscoveryStrengthSetting.name(for: Double(value)))
-                            .tag(value)
-                    }
-                } label: {
-                    Label("Rediscovery", systemImage: "sparkles")
-                }
-                .pickerStyle(.navigationLink)
-                .accessibilityValue(RediscoveryStrengthSetting.name(for: normalizedStrength))
-
-                Picker(selection: songSortBinding) {
-                    ForEach(PlaylistSongSortOption.allCases) { option in
-                        Text(option.title).tag(option)
-                    }
-                } label: {
-                    Label("Song Sort", systemImage: "arrow.up.arrow.down")
-                }
-                .pickerStyle(.navigationLink)
-
                 Toggle(isOn: $showPlayCounts) {
                     Label("Show Play Counts", systemImage: "number")
                 }
-            } header: {
-                Text("Shuffle")
             } footer: {
-                Text("Rediscovery decides how strongly less-played songs lead each new order.")
+                Text("Rediscovery strength and song sort are set on each playlist’s screen.")
             }
 
             Section {
@@ -129,24 +105,6 @@ struct SettingsView: View {
         Binding(
             get: { AppAppearance.resolved(rawValue: appearanceRawValue) },
             set: { appearanceRawValue = $0.rawValue }
-        )
-    }
-
-    private var normalizedStrength: Double {
-        RediscoveryStrengthSetting.normalized(rediscoveryStrength)
-    }
-
-    private var strengthBinding: Binding<Int> {
-        Binding(
-            get: { Int(normalizedStrength) },
-            set: { rediscoveryStrength = Double($0) }
-        )
-    }
-
-    private var songSortBinding: Binding<PlaylistSongSortOption> {
-        Binding(
-            get: { PlaylistSongSortOption.resolved(rawValue: songSortRawValue) },
-            set: { songSortRawValue = $0.rawValue }
         )
     }
 

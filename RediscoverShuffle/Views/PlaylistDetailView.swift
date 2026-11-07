@@ -11,12 +11,12 @@ struct PlaylistDetailView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.screenArrival) private var screenArrival
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @EnvironmentObject private var coverStore: PlaylistCoverStore
     @AppStorage(SettingsKeys.rediscoveryStrength) private var rediscoveryStrength = RediscoveryStrengthSetting.defaultValue
-    @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
     @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
     @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
     @ScaledMetric(relativeTo: .title) private var heroArtworkSize = 236
@@ -28,6 +28,10 @@ struct PlaylistDetailView: View {
     @State private var showsNavigationTitle = false
     @State private var playFeedbackTrigger = 0
     @State private var reshuffleFeedbackTrigger = 0
+    @State private var showsRediscoveryInfo = false
+    /// The order Music was playing when this one was reshuffled, so the
+    /// screen can say the new order isn't playing until Play is tapped.
+    @State private var queuePlayingBeforeReshuffle: UUID?
 
     /// Opens a playlist. Pass the saved queue when it belongs to this playlist
     /// so its order and live progress carry over; otherwise a fresh preview
@@ -77,7 +81,7 @@ struct PlaylistDetailView: View {
         .scrollContentBackground(.hidden)
         .tracksScrollOffset(in: scroll)
         .background {
-            PlaylistBackdrop(
+            ScrollingFieldBackdrop(
                 palette: palette,
                 arrangement: fieldArrangement,
                 isPlaying: isFollowingLiveQueue && playbackService.isPlaying,
@@ -110,7 +114,6 @@ struct PlaylistDetailView: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: playFeedbackTrigger)
         .sensoryFeedback(.impact(weight: .light), trigger: reshuffleFeedbackTrigger)
         .onAppear {
-            lastSelectedPlaylistID = viewModel.playlist.persistentIDString
             rediscoveryStrength = normalizedStrength
             songSortRawValue = songSortOption.rawValue
         }
@@ -158,25 +161,88 @@ struct PlaylistDetailView: View {
                         }
                     }
 
-                headerSubtitle
-                    .font(.subheadline)
-                    .multilineTextAlignment(.center)
+                rediscoverySummary
             }
 
             actionButtons
                 .padding(.top, 4)
 
-            rediscoveryMenu
+            VStack(spacing: 6) {
+                rediscoveryMenu
+                if let queueCaption {
+                    Text(queueCaption)
+                        .font(.footnote)
+                        .foregroundStyle(Color(palette.secondaryText))
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.smooth(duration: 0.25), value: queueCaption)
         }
         .padding(.horizontal, 20)
         .frame(maxWidth: .infinity)
+    }
+
+    /// The song count and what's waiting to be rediscovered. When there is
+    /// something waiting, tapping it explains what the words mean.
+    @ViewBuilder
+    private var rediscoverySummary: some View {
+        if viewModel.playlist.rediscoveryInsight.isEmpty {
+            headerSubtitle
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+        } else {
+            Button {
+                // iOS holds a popover requested mid-transition and shows it
+                // afterwards, over whatever screen is then on top.
+                guard !isLeaving else {
+                    return
+                }
+                showsRediscoveryInfo = true
+            } label: {
+                (headerSubtitle
+                    + Text(verbatim: " ")
+                    + Text(Image(systemName: "info.circle")).foregroundStyle(Color(palette.secondaryText)))
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Explains unplayed and overlooked songs")
+            .popover(isPresented: $showsRediscoveryInfo) {
+                RediscoveryInfoView()
+                    .onAppear {
+                        // The last guard: an explanation that belongs to a
+                        // screen that has gone never stays over the next one.
+                        if isLeaving {
+                            showsRediscoveryInfo = false
+                        }
+                    }
+                    .presentationCompactAdaptation(.popover)
+                    .presentationBackground(.thickMaterial)
+            }
+        }
+    }
+
+    /// Says what Rediscovery and Reshuffle will do while Music is playing:
+    /// the order on screen and the one playing can differ.
+    private var queueCaption: String? {
+        if isFollowingLiveQueue {
+            return String(localized: "Changes take effect on your next Reshuffle.")
+        }
+        if let queuePlayingBeforeReshuffle,
+           playbackService.generatedQueueProgress?.queueID == queuePlayingBeforeReshuffle {
+            return String(localized: "New order, not playing yet. Tap Play to start it.")
+        }
+        return nil
     }
 
     private var headerSubtitle: Text {
         let secondary = Color(palette.secondaryText)
         let songs = Text(localizedSongCount(viewModel.playlist.entries.count))
             .foregroundStyle(secondary)
-        guard let summary = localizedRediscoverySummary(viewModel.rediscoveryInsight) else {
+        guard let summary = localizedRediscoverySummary(viewModel.playlist.rediscoveryInsight) else {
             return songs
         }
         return songs
@@ -240,7 +306,7 @@ struct PlaylistDetailView: View {
 
     private var rediscoveryMenu: some View {
         Menu {
-            Section("Less-played songs lead the queue by") {
+            Section("Rediscovery decides how strongly less-played songs lead each new order.") {
                 Picker("Rediscovery", selection: strengthBinding) {
                     ForEach(RediscoveryStrengthSetting.allowedValues, id: \.self) { value in
                         Text(RediscoveryStrengthSetting.name(for: Double(value)))
@@ -276,9 +342,20 @@ struct PlaylistDetailView: View {
         .accessibilityHint("Chooses how strongly less-played songs lead the order")
     }
 
+    /// Read when a button is tapped, so it holds even while SwiftUI has
+    /// stopped updating this screen. True once the screen is grabbed to be
+    /// swiped away or starts going away; the zoom transition's guard also
+    /// switches its touches off in UIKit, which the toolbar sits outside.
+    private var isLeaving: Bool {
+        screenArrival?.isSettled == false
+    }
+
     private var pinButton: some View {
         let isPinned = pinnedPlaylistStore.isPinned(viewModel.playlist.persistentIDString)
         return Button {
+            guard !isLeaving else {
+                return
+            }
             pinnedPlaylistStore.toggle(viewModel.playlist.persistentIDString)
         } label: {
             Label(
@@ -344,10 +421,10 @@ struct PlaylistDetailView: View {
                         position: offset + 1,
                         isCurrent: isCurrent,
                         isPlaying: playbackService.isPlaying,
-                        freshness: viewModel.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
+                        freshness: viewModel.playlist.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
                         showPlayCount: showPlayCounts
                     )
-                    .listRowBackground(isCurrent ? Color.primary.opacity(0.06) : Color.clear)
+                    .listRowBackground(isCurrent ? Color.primary.opacity(0.08) : Color.clear)
                     .listRowSeparatorTint(Color.primary.opacity(0.1))
                 }
             }
@@ -355,7 +432,7 @@ struct PlaylistDetailView: View {
             ForEach(sortedPlaylistEntries) { entry in
                 TrackRow(
                     entry: entry,
-                    freshness: viewModel.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
+                    freshness: viewModel.playlist.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
                     showPlayCount: showPlayCounts
                 )
                 .listRowBackground(Color.clear)
@@ -370,12 +447,16 @@ struct PlaylistDetailView: View {
         guard viewModel.prepareVisibleOrderForPlayback() else {
             return
         }
+        queuePlayingBeforeReshuffle = nil
         generatedQueueSession.markSubmittedForPlayback(viewModel)
         playbackService.setQueueAndPlay(entries: viewModel.generatedOrder, queueID: viewModel.queueID)
         playFeedbackTrigger += 1
     }
 
     private func reshuffle() {
+        if isFollowingLiveQueue {
+            queuePlayingBeforeReshuffle = viewModel.queueID
+        }
         // Rows glide to their new places; with Reduce Motion they swap in place.
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
             viewModel.reshuffle(bias: normalizedStrength)
@@ -463,61 +544,51 @@ struct PlaylistDetailView: View {
     }
 }
 
-/// Scroll position for the backdrop. It lives outside the view's own state
-/// so scrolling redraws only the backdrop, not the song list.
-@MainActor
-@Observable
-private final class ScrollTracker {
-    var offset: CGFloat = 0
-    /// The field holds still while the list moves, so scrolling never has
-    /// to share frames with the drift.
-    var isScrolling = false
-}
-
-private extension View {
-    /// Reports how far the list has scrolled. iOS 17 cannot read this, so
-    /// the backdrop stays put there instead of scrolling with the header.
-    @ViewBuilder
-    func tracksScrollOffset(in tracker: ScrollTracker) -> some View {
-        if #available(iOS 18.0, *) {
-            // Past a screen's height the field is long gone, so further
-            // scrolling stops redrawing it.
-            onScrollGeometryChange(for: CGFloat.self) { geometry in
-                min(geometry.contentOffset.y + geometry.contentInsets.top, 1_000)
-            } action: { _, offset in
-                tracker.offset = offset
-            }
-            .onScrollPhaseChange { _, phase in
-                tracker.isScrolling = phase.isScrolling
-            }
-        } else {
-            self
-        }
-    }
-}
-
-/// The playlist's colour field behind the header, fading into its ground
-/// colour beneath the songs. It scrolls away with the header and stretches
-/// when the list is pulled down.
-private struct PlaylistBackdrop: View {
-    let palette: ArtworkColorPalette
-    let arrangement: Int
-    let isPlaying: Bool
-    let fieldHeight: CGFloat
-    let scroll: ScrollTracker
-
+/// What the rediscovery words mean, opened from a playlist's song count.
+private struct RediscoveryInfoView: View {
     var body: some View {
-        let offset = scroll.offset
-        ColorField(
-            palette: palette,
-            arrangement: arrangement,
-            isPlaying: isPlaying && !scroll.isScrolling,
-            fadesIntoGround: true
-        )
-        .frame(height: fieldHeight + max(0, -offset))
-        .offset(y: -max(0, offset))
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Color(palette.ground))
-        .ignoresSafeArea()
+        VStack(alignment: .leading, spacing: 14) {
+            Text("How Rediscovery Works")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            term(
+                PlayFreshness.unplayed.title ?? "",
+                systemImage: PlayFreshness.unplayed.systemImage,
+                definition: String(localized: "Songs you’ve never played.")
+            )
+            term(
+                PlayFreshness.overlooked.title ?? "",
+                systemImage: PlayFreshness.overlooked.systemImage,
+                definition: String(localized: "Played, but no more than a quarter as often as this playlist’s typical song.")
+            )
+            term(
+                String(localized: "Rediscovery"),
+                systemImage: "sparkles",
+                definition: String(localized: "Rediscovery decides how strongly less-played songs lead each new order.")
+                    + " " + String(localized: "Every order is still random.")
+            )
+        }
+        .padding(20)
+        .frame(idealWidth: 320, maxWidth: 360, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func term(_ title: String, systemImage: String?, definition: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .foregroundStyle(Color.ember)
+                        .accessibilityHidden(true)
+                }
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+            }
+            Text(definition)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
     }
 }

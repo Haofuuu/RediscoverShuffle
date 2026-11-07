@@ -73,23 +73,17 @@ struct MiniPlayerBar: View {
 }
 
 /// A capsule of plain glass, like the system's floating bars.
-private struct FloatingBarBackground: ViewModifier {
-    func body(content: Content) -> some View {
-        let shape = Capsule(style: .continuous)
+private extension View {
+    /// Glass casts its own shadow; the material before iOS 26 needs one to
+    /// float like the system's bars.
+    @ViewBuilder
+    func floatingBarBackground() -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
+            glassPane(in: Capsule(style: .continuous))
         } else {
-            content
-                .background(.regularMaterial, in: shape)
-                .overlay { shape.strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5) }
+            glassPane(in: Capsule(style: .continuous))
                 .shadow(color: .black.opacity(0.14), radius: 18, y: 8)
         }
-    }
-}
-
-private extension View {
-    func floatingBarBackground() -> some View {
-        modifier(FloatingBarBackground())
     }
 }
 
@@ -117,7 +111,10 @@ struct NowPlayingSheet: View {
     }
 
     private var palette: ArtworkColorPalette {
-        ArtworkPalette.palette(for: playbackService.nowPlaying?.artwork, appearance: .dark)
+        if let snapshot = playbackService.nowPlaying {
+            return ArtworkPalette.palette(forSong: snapshot.id, artwork: snapshot.artwork, appearance: .dark)
+        }
+        return ArtworkPalette.fallback(appearance: .dark)
     }
 
     /// Each song deals the field differently, so a track change is felt
@@ -285,7 +282,7 @@ struct NowPlayingSheet: View {
                     TrackRow(
                         entry: entry,
                         position: offset + 1,
-                        freshness: viewModel.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
+                        freshness: viewModel.playlist.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
                         showPlayCount: showPlayCounts
                     )
                     .listRowBackground(Color.clear)
@@ -315,12 +312,14 @@ private struct PlaybackScrubber: View {
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @Environment(\.screenTheme) private var theme
     let duration: TimeInterval
-    @State private var scrubFraction: Double?
+    /// Resets by itself if iOS cancels the drag, for example when the sheet's
+    /// swipe-down takes over, so the bar can never stay stuck mid-scrub.
+    @GestureState private var scrubFraction: Double?
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.5)) { _ in
             let elapsed = scrubFraction.map { $0 * duration } ?? min(playbackService.currentPlaybackTime, duration)
-            let fraction = min(max(elapsed / duration, 0), 1)
+            let fraction = Self.fraction(of: elapsed, in: duration)
 
             VStack(spacing: 8) {
                 GeometryReader { proxy in
@@ -339,23 +338,21 @@ private struct PlaybackScrubber: View {
                     .contentShape(Rectangle())
                     .gesture(
                         DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                scrubFraction = min(max(value.location.x / proxy.size.width, 0), 1)
+                            .updating($scrubFraction) { value, fraction, _ in
+                                fraction = Self.fraction(of: value.location.x, in: proxy.size.width)
                             }
-                            .onEnded { _ in
-                                if let scrubFraction {
-                                    playbackService.seek(to: scrubFraction * duration)
-                                }
-                                scrubFraction = nil
+                            .onEnded { value in
+                                let fraction = Self.fraction(of: value.location.x, in: proxy.size.width)
+                                playbackService.seek(to: fraction * duration)
                             }
                     )
                 }
                 .frame(height: 28)
 
                 HStack {
-                    Text(Self.format(elapsed))
+                    Text(format(elapsed))
                     Spacer()
-                    Text(verbatim: "−" + Self.format(duration - elapsed))
+                    Text(verbatim: "−" + format(duration - elapsed))
                 }
                 .font(.caption.monospacedDigit().weight(.medium))
                 .foregroundStyle(theme.secondaryText)
@@ -366,8 +363,8 @@ private struct PlaybackScrubber: View {
                 String(
                     format: String(localized: "%@ of %@"),
                     locale: .current,
-                    Self.format(elapsed),
-                    Self.format(duration)
+                    format(elapsed),
+                    format(duration)
                 )
             )
             .accessibilityAdjustableAction { direction in
@@ -378,7 +375,17 @@ private struct PlaybackScrubber: View {
         .sensoryFeedback(.selection, trigger: scrubFraction == nil)
     }
 
-    private static func format(_ time: TimeInterval) -> String {
-        Duration.seconds(max(0, time).rounded(.down)).formatted(.time(pattern: .minuteSecond))
+    /// How far along `x` is, from 0 to 1; zero when there's no length.
+    private static func fraction(of x: Double, in length: Double) -> Double {
+        guard length > 0 else {
+            return 0
+        }
+        return min(max(x / length, 0), 1)
+    }
+
+    /// Hours appear only when needed: 3:05, but 1:15:12 for a long live set.
+    private func format(_ time: TimeInterval) -> String {
+        let pattern: Duration.TimeFormatStyle.Pattern = duration >= 3_600 ? .hourMinuteSecond : .minuteSecond
+        return Duration.seconds(max(0, time).rounded(.down)).formatted(.time(pattern: pattern))
     }
 }

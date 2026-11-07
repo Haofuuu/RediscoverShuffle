@@ -23,24 +23,43 @@ final class PlaylistCoverStore: ObservableObject {
     /// found, so later refreshes don't repeat the queries.
     private var lookups: [MPMediaEntityPersistentID: Playlist?] = [:]
     private var swatchCache: [Artwork: [PaletteColor]] = [:]
+    /// What the covers were last loaded for. Every play changes the library's
+    /// play counts, but covers only depend on each playlist's name and songs,
+    /// so a play doesn't send MusicKit for every cover again.
+    private var loadedFor: [CoverKey] = []
+
+    private struct CoverKey: Equatable {
+        let id: MPMediaEntityPersistentID
+        let name: String
+        let songIDs: [MPMediaEntityPersistentID]
+    }
 
     func reload(for playlists: [LibraryPlaylist]) {
-        loadTask?.cancel()
         guard !playlists.isEmpty, MusicAuthorization.currentStatus == .authorized else {
+            loadTask?.cancel()
+            loadedFor = []
             covers = [:]
             return
         }
+        let key = playlists.map {
+            CoverKey(id: $0.id, name: $0.name, songIDs: $0.signature.songIDs)
+        }
+        guard key != loadedFor else {
+            return
+        }
+        loadTask?.cancel()
         let library = playlists.map {
             PlaylistCoverMatcher.LibraryEntry(persistentID: $0.id, name: $0.name)
         }
         loadTask = Task { [weak self] in
-            await self?.load(library)
+            await self?.load(library, for: key)
         }
     }
 
-    private func load(_ library: [PlaylistCoverMatcher.LibraryEntry]) async {
+    private func load(_ library: [PlaylistCoverMatcher.LibraryEntry], for key: [CoverKey]) async {
         // Without the MusicKit App Service, or on a device without a library,
-        // the request fails and every playlist keeps its mosaic.
+        // the request fails and every playlist keeps its mosaic; the next
+        // reload tries again.
         guard let musicPlaylists = try? await Self.libraryPlaylists(), !Task.isCancelled else {
             return
         }
@@ -71,6 +90,7 @@ final class PlaylistCoverStore: ObservableObject {
 
         let artworks = found.compactMapValues(\.artwork)
         publish(artworks)
+        loadedFor = key
 
         for artwork in Set(artworks.values) where swatchCache[artwork] == nil {
             swatchCache[artwork] = await ArtworkPalette.swatches(of: artwork)

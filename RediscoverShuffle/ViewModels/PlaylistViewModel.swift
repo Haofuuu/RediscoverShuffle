@@ -9,12 +9,6 @@ final class PlaylistViewModel: ObservableObject {
 
     private(set) var queueID: UUID
 
-    /// How much of the playlist is unplayed or overlooked. The playlist is
-    /// immutable for the lifetime of this view model, so this is computed once.
-    private(set) lazy var rediscoveryInsight = RediscoveryInsight(
-        playCounts: playlist.entries.map(\.playCount)
-    )
-
     private let shuffleEngine = WeightedShuffleEngine()
 
     init(
@@ -36,6 +30,10 @@ final class PlaylistViewModel: ObservableObject {
     }
 
     func reshuffle(bias: Double) {
+        let interval = MusicLibraryService.signposter.beginInterval("Generate order")
+        defer {
+            MusicLibraryService.signposter.endInterval("Generate order", interval)
+        }
         let candidates = playlist.entries.map {
             ShuffleCandidate(id: $0.id, playCount: $0.playCount, originalIndex: $0.originalIndex)
         }
