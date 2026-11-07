@@ -12,6 +12,7 @@ struct PlaylistDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.screenArrival) private var screenArrival
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
@@ -37,7 +38,11 @@ struct PlaylistDetailView: View {
     /// so its order and live progress carry over; otherwise a fresh preview
     /// order is generated immediately.
     init(playlist: LibraryPlaylist, savedQueue: PlaylistViewModel? = nil) {
-        _viewModel = StateObject(wrappedValue: savedQueue ?? Self.previewQueue(for: playlist))
+        _viewModel = StateObject(
+            wrappedValue: savedQueue
+                ?? ReturningPage.take(for: playlist)
+                ?? Self.previewQueue(for: playlist)
+        )
     }
 
     private static func previewQueue(for playlist: LibraryPlaylist) -> PlaylistViewModel {
@@ -116,6 +121,15 @@ struct PlaylistDetailView: View {
         .onAppear {
             rediscoveryStrength = normalizedStrength
             songSortRawValue = songSortOption.rawValue
+            screenArrival?.goBack = { [dismiss] in
+                dismiss()
+            }
+            screenArrival?.onDeparture = { [viewModel] departure in
+                switch departure {
+                case .started: ReturningPage.remember(viewModel)
+                case .finished: ReturningPage.gone(viewModel)
+                }
+            }
         }
         .onChange(of: rediscoveryStrength) { oldValue, newValue in
             // A new strength previews immediately, but never disturbs a queue
@@ -545,6 +559,38 @@ struct PlaylistDetailView: View {
 }
 
 /// What the rediscovery words mean, opened from a playlist's song count.
+/// The page of a playlist that's going away. Tapping that playlist again
+/// while it zooms back opens a new screen, and without this it would arrive
+/// freshly shuffled; with it, the same page comes straight back.
+@MainActor
+private enum ReturningPage {
+    private static var page: (viewModel: PlaylistViewModel, until: Date)?
+
+    /// Kept while the playlist zooms back, however long a swipe takes,
+    /// within a limit in case the end is never reported.
+    static func remember(_ viewModel: PlaylistViewModel) {
+        page = (viewModel, .now.addingTimeInterval(5))
+    }
+
+    /// Once it has gone, a tap that just missed the zoom still brings it back.
+    static func gone(_ viewModel: PlaylistViewModel) {
+        guard let page, page.viewModel === viewModel else {
+            return
+        }
+        self.page = (viewModel, min(page.until, .now.addingTimeInterval(0.5)))
+    }
+
+    static func take(for playlist: LibraryPlaylist) -> PlaylistViewModel? {
+        defer {
+            page = nil
+        }
+        guard let page, page.viewModel.playlist.id == playlist.id, page.until > .now else {
+            return nil
+        }
+        return page.viewModel
+    }
+}
+
 private struct RediscoveryInfoView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
