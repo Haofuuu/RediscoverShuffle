@@ -5,7 +5,15 @@ import UIKit
 struct PermissionView: View {
     @EnvironmentObject private var libraryService: MusicLibraryService
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage(SettingsKeys.hasShownOnboarding) private var hasShownOnboarding = false
+    @State private var showsSettings = false
+    @State private var hasAppeared = false
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize = 84
+
+    private var palette: ArtworkColorPalette {
+        ArtworkPalette.brand(appearance: .init(colorScheme))
+    }
 
     private var isDenied: Bool {
         libraryService.authorizationStatus == .denied
@@ -17,101 +25,184 @@ struct PermissionView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                Spacer(minLength: 48)
+            VStack(alignment: .leading, spacing: 28) {
+                Spacer(minLength: 12)
 
-                Image(systemName: isDenied || isRestricted ? "music.note.list" : "shuffle.circle.fill")
-                    .font(.system(size: 72))
-                    .foregroundStyle(.tint)
+                Image("AppIconImage")
+                    .resizable()
+                    .frame(width: min(iconSize, 112), height: min(iconSize, 112))
+                    .clipShape(RoundedRectangle(cornerRadius: min(iconSize, 112) * 0.2237, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: min(iconSize, 112) * 0.2237, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                    }
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.16), radius: 22, y: 10)
                     .accessibilityHidden(true)
+                    .entrance(order: 0, isVisible: hasAppeared)
 
-                VStack(spacing: 10) {
-                    Text("Rediscover Shuffle")
-                        .font(.largeTitle.bold())
-                        .multilineTextAlignment(.center)
-
+                VStack(alignment: .leading, spacing: 12) {
                     Text(headline)
-                        .font(.title3.weight(.semibold))
-                        .multilineTextAlignment(.center)
+                        .font(.largeTitle.bold())
+                        .tracking(-0.6)
+                        .accessibilityAddTraits(.isHeader)
 
                     Text(explanation)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                        .font(.body)
+                        .foregroundStyle(Color(palette.secondaryText))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .entrance(order: 1, isVisible: hasAppeared)
 
                 privacyExplanation
+                    .entrance(order: 2, isVisible: hasAppeared)
 
-                if libraryService.isLoading {
-                    ProgressView("Waiting for permission…")
-                } else if libraryService.authorizationStatus == .notDetermined {
-                    Button {
-                        hasShownOnboarding = true
-                        libraryService.requestAuthorization()
-                    } label: {
-                        Label("Continue", systemImage: "music.note")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .accessibilityHint("Shows the system prompt for Music library access")
-                } else if isDenied || isRestricted {
-                    Button {
-                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                        openURL(url)
-                    } label: {
-                        Label("Open Settings", systemImage: "gear")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .accessibilityHint("Opens this app's page in Settings")
+                Label {
+                    Text("Your library and every shuffle stay on this iPhone. No analytics, no servers.")
+                } icon: {
+                    Image(systemName: "lock.shield")
+                        .accessibilityHidden(true)
                 }
-
-                Text("Your library information and shuffle calculations stay on this iPhone. The app does not use analytics or a server.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color(palette.secondaryText))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .entrance(order: 3, isVisible: hasAppeared)
 
                 Spacer(minLength: 24)
             }
             .frame(maxWidth: 540)
             .padding(.horizontal, 28)
+            .padding(.bottom, 20)
+            .frame(maxWidth: .infinity)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(alignment: .top) {
+            // The welcome screen is the one place the field drifts without
+            // music: a first look at how playlists will feel.
+            ColorField(palette: palette, isPlaying: true, fadesIntoGround: true)
+                .frame(height: 560)
+                .ignoresSafeArea()
+        }
+        .background(Color(palette.ground))
+        .safeAreaInset(edge: .bottom) {
+            permissionAction
+                .padding(.horizontal, 28)
+                .padding(.vertical, 12)
+        }
+        .onAppear {
+            hasAppeared = true
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showsSettings = true
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .accessibilityHint("Opens Rediscover Shuffle settings")
+            }
+        }
+        // Applied after the bottom inset so Get Started is themed too, and
+        // before the sheet so Settings keeps the standard colours.
+        .screenTheme(palette)
+        .sheet(isPresented: $showsSettings) {
+            NavigationStack {
+                SettingsView()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var permissionAction: some View {
+        if libraryService.isLoading {
+            ProgressView("Waiting for permission…")
+                .frame(maxWidth: .infinity, minHeight: 52)
+        } else if libraryService.authorizationStatus == .notDetermined {
+            Button {
+                hasShownOnboarding = true
+                libraryService.requestAuthorization()
+            } label: {
+                CenteredActionLabel(title: String(localized: "Get Started"), systemImage: "arrow.forward")
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .accessibilityHint("Shows the system prompt for Music library access")
+        } else if isDenied || isRestricted {
+            Button {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                openURL(url)
+            } label: {
+                CenteredActionLabel(title: String(localized: "Open Settings"), systemImage: "gear")
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .accessibilityHint("Opens this app's page in Settings")
+        }
     }
 
     private var headline: String {
         switch libraryService.authorizationStatus {
         case .denied:
-            return "Music access is turned off"
+            return String(localized: "Music access is turned off")
         case .restricted:
-            return "Music access is restricted"
+            return String(localized: "Music access is restricted")
         default:
-            return hasShownOnboarding ? "Music library access is needed" : "Give overlooked songs another chance"
+            return hasShownOnboarding
+                ? String(localized: "One step left: allow Music access")
+                : String(localized: "Give overlooked songs another chance")
         }
     }
 
     private var explanation: String {
         switch libraryService.authorizationStatus {
         case .denied:
-            return "Allow Music access in Settings, then return here to browse your playlists."
+            return String(localized: "Allow Music access in Settings, then return here to browse your playlists.")
         case .restricted:
-            return "This iPhone currently prevents access to the Music library. A device restriction or parental control may need to be changed."
+            return String(localized: "This iPhone currently prevents access to the Music library. A device restriction or parental control may need to be changed.")
         default:
-            return "Choose one of your Music library playlists. Songs you have played less often will be more likely to appear early, while every result remains random."
+            return String(localized: "Pick a playlist and Rediscover Shuffle brings the songs you rarely play closer to the top. Every order is still random.")
         }
     }
 
     private var privacyExplanation: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Show playlists already in your library", systemImage: "music.note.list")
-            Label("Read play counts to weight the shuffle", systemImage: "chart.bar")
-            Label("Send the finished order to the Music app", systemImage: "play.circle")
+        VStack(alignment: .leading, spacing: 18) {
+            featureRow(String(localized: "Shows the playlists already in your library"), systemImage: "music.note.list")
+            featureRow(String(localized: "Reads play counts to find overlooked songs"), systemImage: "sparkles")
+            featureRow(String(localized: "Plays the new order in the Music app"), systemImage: "play.fill")
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .accessibilityElement(children: .combine)
+    }
+
+    private func featureRow(_ title: String, systemImage: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.ember)
+                .frame(width: 26)
+                .accessibilityHidden(true)
+            Text(title)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// First-run entrance: each block rises 10pt and fades in, 60ms after the
+/// previous one. With Reduce Motion it only fades.
+private struct EntranceModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let order: Int
+    let isVisible: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible || reduceMotion ? 0 : 10)
+            .animation(.strongEaseOut(duration: 0.5).delay(Double(order) * 0.06), value: isVisible)
+    }
+}
+
+private extension View {
+    func entrance(order: Int, isVisible: Bool) -> some View {
+        modifier(EntranceModifier(order: order, isVisible: isVisible))
     }
 }

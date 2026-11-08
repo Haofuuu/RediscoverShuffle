@@ -30,6 +30,10 @@ final class PlaylistViewModel: ObservableObject {
     }
 
     func reshuffle(bias: Double) {
+        let interval = MusicLibraryService.signposter.beginInterval("Generate order")
+        defer {
+            MusicLibraryService.signposter.endInterval("Generate order", interval)
+        }
         let candidates = playlist.entries.map {
             ShuffleCandidate(id: $0.id, playCount: $0.playCount, originalIndex: $0.originalIndex)
         }

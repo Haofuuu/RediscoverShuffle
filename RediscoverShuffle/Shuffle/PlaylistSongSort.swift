@@ -6,15 +6,21 @@ enum PlaylistSongSortOption: String, CaseIterable, Hashable, Identifiable {
     case playsHighToLow
     case singers
 
+    static let defaultValue = PlaylistSongSortOption.defaultOrder
+
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .defaultOrder: return "Default"
-        case .playsLowToHigh: return "Plays: Low to High"
-        case .playsHighToLow: return "Plays: High to Low"
-        case .singers: return "Singers: A to Z"
+        case .defaultOrder: return String(localized: "Default Playlist Order")
+        case .playsLowToHigh: return String(localized: "Plays: Low to High")
+        case .playsHighToLow: return String(localized: "Plays: High to Low")
+        case .singers: return String(localized: "Singers: A to Z")
         }
+    }
+
+    static func resolved(rawValue: String) -> PlaylistSongSortOption {
+        PlaylistSongSortOption(rawValue: rawValue) ?? defaultValue
     }
 
     func sorted<Element>(

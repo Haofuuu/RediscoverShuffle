@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import MediaPlayer
+import os
 
 @MainActor
 final class MusicLibraryService: ObservableObject {
@@ -9,11 +10,21 @@ final class MusicLibraryService: ObservableObject {
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
-    private let mediaLibrary = MPMediaLibrary.default()
+    private lazy var mediaLibrary = MPMediaLibrary.default()
     private var libraryChangeObserver: NSObjectProtocol?
+    private var pendingRefresh: Task<Void, Never>?
+    /// Albums whose artwork is known to draw. Test-drawing artwork is the
+    /// costliest part of a reload, and artwork that has drawn keeps drawing.
+    private static var drawableAlbumIDs = Set<MPMediaEntityPersistentID>()
+    /// Marks library reloads and queue generation for Instruments, so their
+    /// cost can be read on a device.
+    static let signposter = OSSignposter(subsystem: "RediscoverShuffle", category: "Performance")
 
     init() {
         authorizationStatus = MPMediaLibrary.authorizationStatus()
+    }
+
+    private func startObservingLibrary() {
         mediaLibrary.beginGeneratingLibraryChangeNotifications()
         libraryChangeObserver = NotificationCenter.default.addObserver(
             forName: .MPMediaLibraryDidChange,
@@ -21,7 +32,7 @@ final class MusicLibraryService: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.refreshPlaylists()
+                self?.scheduleRefresh()
             }
         }
     }
@@ -29,16 +40,38 @@ final class MusicLibraryService: ObservableObject {
     deinit {
         if let libraryChangeObserver {
             NotificationCenter.default.removeObserver(libraryChangeObserver)
+            Task { @MainActor in
+                MPMediaLibrary.default().endGeneratingLibraryChangeNotifications()
+            }
         }
-        mediaLibrary.endGeneratingLibraryChangeNotifications()
     }
 
     func synchronizeAuthorizationAndLoad() {
         authorizationStatus = MPMediaLibrary.authorizationStatus()
         if authorizationStatus == .authorized {
-            refreshPlaylists()
+            // The first load shows the library at once. Later ones, from
+            // returning to the app or a library change, are merged: iOS often
+            // sends both together.
+            if playlists.isEmpty {
+                refreshPlaylists()
+            } else {
+                scheduleRefresh()
+            }
         } else {
+            pendingRefresh?.cancel()
             playlists = []
+        }
+    }
+
+    /// Reloads once things settle, however many requests arrive meanwhile.
+    func scheduleRefresh() {
+        pendingRefresh?.cancel()
+        pendingRefresh = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else {
+                return
+            }
+            self?.refreshPlaylists()
         }
     }
 
@@ -64,21 +97,29 @@ final class MusicLibraryService: ObservableObject {
     }
 
     func refreshPlaylists() {
+        pendingRefresh?.cancel()
         guard MPMediaLibrary.authorizationStatus() == .authorized else {
             authorizationStatus = MPMediaLibrary.authorizationStatus()
             playlists = []
             isLoading = false
             return
         }
+        let interval = Self.signposter.beginInterval("Load library")
+        defer {
+            Self.signposter.endInterval("Load library", interval)
+        }
 
         authorizationStatus = .authorized
+        if libraryChangeObserver == nil {
+            startObservingLibrary()
+        }
         isLoading = true
         errorMessage = nil
 
         let collections = (MPMediaQuery.playlists().collections ?? []).compactMap {
             $0 as? MPMediaPlaylist
         }
-        playlists = collections.map(Self.makePlaylist).sorted { left, right in
+        let loaded = collections.map(Self.makePlaylist).sorted { left, right in
             let comparison = left.name.localizedStandardCompare(right.name)
             if comparison == .orderedSame {
                 return left.id < right.id
@@ -86,7 +127,11 @@ final class MusicLibraryService: ObservableObject {
             return comparison == .orderedAscending
         }
 
-        reconcileStoredPlaylistSelection()
+        // A reload that finds nothing new leaves the screens, and MusicKit's
+        // covers, alone.
+        if loaded.map(\.signature) != playlists.map(\.signature) {
+            playlists = loaded
+        }
         isLoading = false
     }
 
@@ -105,19 +150,43 @@ final class MusicLibraryService: ObservableObject {
         }
 
         let trimmedName = playlist.name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = trimmedName.flatMap { $0.isEmpty ? nil : $0 } ?? "Untitled Playlist"
-        let artwork = items.first(where: { $0.artwork != nil })?.artwork
-
-        return LibraryPlaylist(id: playlistID, name: name, entries: entries, artwork: artwork)
+        let name = trimmedName.flatMap { $0.isEmpty ? nil : $0 }
+            ?? String(localized: "Untitled Playlist")
+        return LibraryPlaylist(
+            id: playlistID,
+            name: name,
+            entries: entries,
+            coverArtworks: coverArtworks(from: items)
+        )
     }
 
-    private func reconcileStoredPlaylistSelection() {
-        let defaults = UserDefaults.standard
-        guard let storedID = defaults.string(forKey: SettingsKeys.lastSelectedPlaylistID) else {
-            return
+    /// Picks artwork from up to four different albums, scanning only the start
+    /// of long playlists so large libraries stay fast to load.
+    private static func coverArtworks(from items: [MPMediaItem]) -> [MPMediaItemArtwork] {
+        var seenAlbumIDs = Set<MPMediaEntityPersistentID>()
+        var artworks: [MPMediaItemArtwork] = []
+        for item in items.prefix(60) {
+            // Songs whose artwork hasn't downloaded from iCloud still return an
+            // artwork object, but it draws nothing and would leave a blank
+            // tile. Another song from the same album may still have it.
+            let albumID = item.albumPersistentID
+            guard let artwork = item.artwork, !seenAlbumIDs.contains(albumID) else {
+                continue
+            }
+            // Songs without an album all share ID 0, so they're always checked.
+            let isKnownDrawable = albumID != 0 && drawableAlbumIDs.contains(albumID)
+            guard isKnownDrawable || artwork.image(at: CGSize(width: 32, height: 32)) != nil else {
+                continue
+            }
+            if albumID != 0 {
+                drawableAlbumIDs.insert(albumID)
+            }
+            seenAlbumIDs.insert(albumID)
+            artworks.append(artwork)
+            if artworks.count == 4 {
+                break
+            }
         }
-        if !playlists.contains(where: { $0.persistentIDString == storedID }) {
-            defaults.removeObject(forKey: SettingsKeys.lastSelectedPlaylistID)
-        }
+        return artworks
     }
 }

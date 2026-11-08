@@ -4,8 +4,18 @@ struct PlaylistBrowserView: View {
     @Environment(\.editMode) private var editMode
     @EnvironmentObject private var libraryService: MusicLibraryService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
-    @AppStorage(SettingsKeys.lastSelectedPlaylistID) private var lastSelectedPlaylistID = ""
+    @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isCoveredBySheet) private var isCoveredBySheet
+    @State private var scroll = ScrollTracker()
     @State private var searchText = ""
+    @State private var showsSettings = false
+    @State private var showsSavedQueue = false
+    @Namespace private var playlistTransition
+    @State private var showsRemoveQueueError = false
+    @State private var removeFeedbackTrigger = 0
+    @State private var pinFeedbackTrigger = 0
 
     private var trimmedSearch: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -17,7 +27,9 @@ struct PlaylistBrowserView: View {
         }
 
         return libraryService.playlists.filter {
-            $0.name.localizedCaseInsensitiveContains(trimmedSearch)
+            // Ignores case, accents, and full- versus half-width forms, so
+            // "beyonce" finds "Beyoncé" and "ｒｏｃｋ" finds "Rock".
+            $0.name.localizedStandardContains(trimmedSearch)
         }
     }
 
@@ -28,15 +40,35 @@ struct PlaylistBrowserView: View {
         return pinnedPlaylistStore.pinnedPlaylistIDs.compactMap { playlistsByID[$0] }
     }
 
-    private var pinnedPlaylists: [LibraryPlaylist] {
-        let matchingIDs = Set(matchingPlaylists.map(\.persistentIDString))
-        return availablePinnedPlaylists.filter { matchingIDs.contains($0.persistentIDString) }
+    /// The list's groups, worked out once per redraw. The library arrives
+    /// sorted by name, and filtering keeps that order.
+    private struct Sections {
+        var pinned: [LibraryPlaylist] = []
+        var withSongs: [LibraryPlaylist] = []
+        /// Empty playlists wait at the bottom, so the list opens on music.
+        var empty: [LibraryPlaylist] = []
+
+        var isEmpty: Bool {
+            pinned.isEmpty && withSongs.isEmpty && empty.isEmpty
+        }
     }
 
-    private var unpinnedPlaylists: [LibraryPlaylist] {
-        matchingPlaylists
-            .filter { !pinnedPlaylistStore.isPinned($0.persistentIDString) }
-            .sorted(by: alphabeticalPlaylistOrder)
+    private var sections: Sections {
+        let matching = matchingPlaylists
+        let matchingIDs = Set(matching.map(\.id))
+        let pinnedIDs = Set(pinnedPlaylistStore.pinnedPlaylistIDs)
+        let unpinned = matching.filter { !pinnedIDs.contains($0.persistentIDString) }
+        return Sections(
+            pinned: availablePinnedPlaylists.filter { matchingIDs.contains($0.id) },
+            withSongs: unpinned.filter { !$0.entries.isEmpty },
+            empty: unpinned.filter(\.entries.isEmpty)
+        )
+    }
+
+    /// The welcome screen's world: the app icon's ember and wine, so home
+    /// feels like the same app as the first screen.
+    private var palette: ArtworkColorPalette {
+        ArtworkPalette.brand(appearance: .init(colorScheme))
     }
 
     private var canReorderPinnedPlaylists: Bool {
@@ -44,60 +76,113 @@ struct PlaylistBrowserView: View {
     }
 
     var body: some View {
-        Group {
-            if libraryService.isLoading && libraryService.playlists.isEmpty {
-                ProgressView("Loading playlists…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if libraryService.playlists.isEmpty {
-                EmptyStateView(
-                    symbol: "music.note.list",
-                    title: "No Playlists Found",
-                    message: "Add a playlist to your library in the Music app, then refresh here.",
-                    actionTitle: "Refresh",
-                    action: libraryService.refreshPlaylists
+        // The list stays on screen in every state, with loading and empty
+        // states laid over it, so the title and search never jump.
+        List {
+            // The title scrolls away with the list and fades under the soft
+            // top edge, like the Music app's Home, instead of collapsing
+            // into the bar.
+            titleRow(String(localized: "Playlists"), font: .largeTitle.bold(), top: 0, bottom: 8)
+
+            if !libraryService.playlists.isEmpty {
+                PlaylistSearchField(text: $searchText)
+                    .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 10, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+
+            if trimmedSearch.isEmpty,
+               !libraryService.playlists.isEmpty,
+               let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
+                ContinueQueueCard(
+                    viewModel: lastQueueViewModel,
+                    transition: playlistTransition,
+                    open: { showsSavedQueue = true },
+                    remove: removeSavedQueue
                 )
-            } else if matchingPlaylists.isEmpty {
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+
+            let sections = sections
+
+            // Titles are rows rather than section headers: a plain list pins
+            // headers under the bar, where rows would scroll behind them on
+            // the see-through page.
+            if !sections.pinned.isEmpty {
+                sectionTitle(String(localized: "Pinned"))
+                ForEach(sections.pinned) { playlist in
+                    playlistLink(for: playlist)
+                }
+                .onMove(perform: movePinnedPlaylists)
+                .moveDisabled(!canReorderPinnedPlaylists)
+            }
+
+            if !sections.withSongs.isEmpty {
+                if !sections.pinned.isEmpty {
+                    sectionTitle(String(localized: "All Playlists"))
+                }
+                ForEach(sections.withSongs) { playlist in
+                    playlistLink(for: playlist)
+                }
+            }
+
+            if !sections.empty.isEmpty {
+                if !sections.pinned.isEmpty || !sections.withSongs.isEmpty {
+                    sectionTitle(String(localized: "Empty Playlists"))
+                }
+                ForEach(sections.empty) { playlist in
+                    playlistLink(for: playlist)
+                }
+            }
+
+            // Shown as a row so the search field above it stays usable.
+            if !libraryService.playlists.isEmpty, sections.isEmpty {
                 EmptyStateView(
                     symbol: "magnifyingglass",
-                    title: "No Matches",
-                    message: "No playlist name contains “\(searchText)”.",
+                    title: String(localized: "No Matches"),
+                    message: String(
+                        format: String(localized: "No playlist name contains “%@”."),
+                        locale: .current,
+                        searchText
+                    ),
                     actionTitle: nil,
                     action: nil
                 )
-            } else {
-                List {
-                    if !pinnedPlaylists.isEmpty {
-                        Section("Pinned") {
-                            ForEach(pinnedPlaylists) { playlist in
-                                playlistLink(for: playlist)
-                            }
-                            .onMove(perform: movePinnedPlaylists)
-                            .moveDisabled(!canReorderPinnedPlaylists)
-                        }
-                    }
-
-                    if !unpinnedPlaylists.isEmpty {
-                        Section {
-                            ForEach(unpinnedPlaylists) { playlist in
-                                playlistLink(for: playlist)
-                            }
-                        } header: {
-                            if !pinnedPlaylists.isEmpty {
-                                Text("Other Playlists")
-                            }
-                        }
-                    }
-                }
-                .listStyle(.plain)
-                .refreshable {
-                    libraryService.refreshPlaylists()
-                }
+                .padding(.top, 48)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
+        .softTopEdge()
+        .tracksScrollOffset(in: scroll)
+        .refreshable {
+            libraryService.refreshPlaylists()
+        }
+        .overlay {
+            emptyState
+        }
+        .background {
+            BrowserBackdrop(palette: palette, scroll: scroll)
+                .environment(\.isCoveredBySheet, isCoveredBySheet || showsSettings)
+        }
+        .screenTheme(palette)
         .navigationTitle("Playlists")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search playlists")
         .toolbar {
+            // The visible title lives in the list; the bar keeps only its
+            // buttons. The navigation title still names the screen for
+            // VoiceOver and the app switcher.
+            ToolbarItem(placement: .principal) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityHidden(true)
+            }
+
             ToolbarItem(placement: .topBarLeading) {
                 if availablePinnedPlaylists.count > 1 {
                     EditButton()
@@ -108,11 +193,27 @@ struct PlaylistBrowserView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    libraryService.refreshPlaylists()
+                    showsSettings = true
                 } label: {
-                    Label("Refresh Playlists", systemImage: "arrow.clockwise")
+                    Label("Settings", systemImage: "gearshape")
                 }
-                .disabled(libraryService.isLoading)
+                .accessibilityHint("Opens Rediscover Shuffle settings")
+            }
+        }
+        .sheet(isPresented: $showsSettings) {
+            NavigationStack {
+                SettingsView()
+            }
+        }
+        .alert("Could Not Remove Queue", isPresented: $showsRemoveQueueError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Rediscover Shuffle could not remove its saved queue. Please try again.")
+        }
+        .navigationDestination(isPresented: $showsSavedQueue) {
+            if let savedQueue = generatedQueueSession.lastQueueViewModel {
+                PlaylistDetailView(playlist: savedQueue.playlist, savedQueue: savedQueue)
+                    .zoomTransition(from: ContinueQueueCard.transitionID, in: playlistTransition)
             }
         }
         .onChange(of: searchText) { _, newValue in
@@ -120,6 +221,8 @@ struct PlaylistBrowserView: View {
                 editMode?.wrappedValue = .inactive
             }
         }
+        .sensoryFeedback(.selection, trigger: pinFeedbackTrigger)
+        .sensoryFeedback(.impact(weight: .medium), trigger: removeFeedbackTrigger)
         .onChange(of: pinnedPlaylistStore.pinnedPlaylistIDs) { _, _ in
             if availablePinnedPlaylists.count < 2 {
                 editMode?.wrappedValue = .inactive
@@ -130,7 +233,23 @@ struct PlaylistBrowserView: View {
                 libraryService.errorMessage = nil
             }
         } message: {
-            Text(libraryService.errorMessage ?? "An unknown error occurred.")
+            Text(libraryService.errorMessage ?? String(localized: "An unknown error occurred."))
+        }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        if libraryService.isLoading && libraryService.playlists.isEmpty {
+            ProgressView("Loading playlists…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if libraryService.playlists.isEmpty {
+            EmptyStateView(
+                symbol: "music.note.list",
+                title: String(localized: "No Playlists Found"),
+                message: String(localized: "Add a playlist to your library in the Music app, then refresh here."),
+                actionTitle: String(localized: "Refresh"),
+                action: libraryService.refreshPlaylists
+            )
         }
     }
 
@@ -141,30 +260,55 @@ struct PlaylistBrowserView: View {
         )
     }
 
-    private func alphabeticalPlaylistOrder(
-        _ left: LibraryPlaylist,
-        _ right: LibraryPlaylist
-    ) -> Bool {
-        let comparison = left.name.localizedStandardCompare(right.name)
-        if comparison == .orderedSame {
-            return left.id < right.id
-        }
-        return comparison == .orderedAscending
+    private func sectionTitle(_ title: String) -> some View {
+        titleRow(title, font: .title3.bold(), top: 20, bottom: 4)
+    }
+
+    private func titleRow(_ title: String, font: Font, top: CGFloat, bottom: CGFloat) -> some View {
+        Text(title)
+            .font(font)
+            .foregroundStyle(Color.primary)
+            .accessibilityAddTraits(.isHeader)
+            .listRowInsets(EdgeInsets(top: top, leading: 16, bottom: bottom, trailing: 16))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .moveDisabled(true)
     }
 
     private func playlistLink(for playlist: LibraryPlaylist) -> some View {
         NavigationLink {
-            PlaylistDetailView(playlist: playlist)
+            PlaylistDetailView(
+                playlist: playlist,
+                savedQueue: generatedQueueSession.lastQueueViewModel.flatMap {
+                    $0.playlist.id == playlist.id ? $0 : nil
+                }
+            )
+            .zoomTransition(from: playlist.id, in: playlistTransition)
         } label: {
             PlaylistRow(
                 playlist: playlist,
-                isLastSelected: playlist.persistentIDString == lastSelectedPlaylistID,
-                isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString)
+                isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString),
+                transition: playlistTransition
             )
         }
-        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        .listRowBackground(Color.clear)
+        .listRowSeparatorTint(Color.primary.opacity(0.1))
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             pinButton(for: playlist)
+        }
+        .contextMenu {
+            pinButton(for: playlist)
+            if canReorderPinnedPlaylists,
+               let index = availablePinnedPlaylists.firstIndex(where: { $0.id == playlist.id }) {
+                Button("Move Up", systemImage: "arrow.up") {
+                    movePinnedPlaylists(from: IndexSet(integer: index), to: index - 1)
+                }
+                .disabled(index == 0)
+                Button("Move Down", systemImage: "arrow.down") {
+                    movePinnedPlaylists(from: IndexSet(integer: index), to: index + 2)
+                }
+                .disabled(index == availablePinnedPlaylists.count - 1)
+            }
         }
     }
 
@@ -178,69 +322,426 @@ struct PlaylistBrowserView: View {
         pinnedPlaylistStore.updateOrder(orderedIDs)
     }
 
+    /// Forgets the saved order behind the Continue card. Music keeps playing
+    /// and the playlist itself is untouched; the next Play saves a new one.
+    private func removeSavedQueue() {
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
+            showsRemoveQueueError = !generatedQueueSession.clearSavedQueue()
+        }
+        if !showsRemoveQueueError {
+            removeFeedbackTrigger += 1
+        }
+    }
+
     private func pinButton(for playlist: LibraryPlaylist) -> some View {
         let isPinned = pinnedPlaylistStore.isPinned(playlist.persistentIDString)
         return Button {
             pinnedPlaylistStore.toggle(playlist.persistentIDString)
+            pinFeedbackTrigger += 1
         } label: {
             Label(
-                isPinned ? "Unpin Playlist" : "Pin Playlist",
+                isPinned
+                    ? String(localized: "Unpin Playlist")
+                    : String(localized: "Pin Playlist"),
                 systemImage: isPinned ? "pin.slash" : "pin.fill"
             )
         }
-        .tint(isPinned ? .gray : .orange)
+        .tint(Color.ember)
     }
 }
 
 private struct PlaylistRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.screenTheme) private var theme
     let playlist: LibraryPlaylist
-    let isLastSelected: Bool
     let isPinned: Bool
+    let transition: Namespace.ID
 
-    private var songCountText: String {
-        "\(playlist.entries.count) \(playlist.entries.count == 1 ? "song" : "songs")"
+    private var isEmpty: Bool {
+        playlist.entries.isEmpty
+    }
+
+    private var countText: String {
+        isEmpty ? String(localized: "Empty") : localizedSongCount(playlist.entries.count)
+    }
+
+    /// The one thing worth knowing before opening: unplayed songs if there
+    /// are any, otherwise overlooked ones.
+    private var waiting: (text: String, kind: PlayFreshness)? {
+        let insight = playlist.rediscoveryInsight
+        if insight.unplayedCount > 0 {
+            return (localizedUnplayedCount(insight.unplayedCount), .unplayed)
+        }
+        if insight.overlookedCount > 0 {
+            return (localizedOverlookedCount(insight.overlookedCount), .overlooked)
+        }
+        return nil
+    }
+
+    private var detailLine: Text {
+        let line = Text(countText).foregroundStyle(theme.secondaryText)
+        guard let waiting else {
+            return line
+        }
+        let symbol = waiting.kind.systemImage.map {
+            Text(Image(systemName: $0)).foregroundStyle(Color.ember) + Text(verbatim: " ")
+        } ?? Text(verbatim: "")
+        return line
+            + Text(verbatim: " · ").foregroundStyle(theme.secondaryText)
+            + symbol
+            + Text(waiting.text).foregroundStyle(Color.primary)
+    }
+
+    private var artwork: some View {
+        PlaylistArtworkView(playlist: playlist, size: 56)
+            .opacity(isEmpty ? 0.55 : 1)
+            .zoomSource(id: playlist.id, in: transition)
+    }
+
+    private var titleAndDetail: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(playlist.name)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(isEmpty ? theme.secondaryText : Color.primary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+
+            detailLine
+                .font(.subheadline)
+        }
+    }
+
+    @ViewBuilder
+    private var pin: some View {
+        if isPinned {
+            Image(systemName: "pin.fill")
+                .font(.footnote)
+                .foregroundStyle(Color.ember)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var playlistAccessibilityLabel: String {
+        var parts = [playlist.name, countText]
+        if let waiting {
+            parts.append(waiting.text)
+        }
+        if isPinned {
+            parts.append(String(localized: "pinned"))
+        }
+        return parts.joined(separator: String(localized: ", "))
+    }
+
+    private var playlistAccessibilityHint: String {
+        if isPinned {
+            return String(localized: "Touch and hold to unpin or move this playlist. Use Edit to drag pinned playlists.")
+        }
+        return String(localized: "Swipe right or touch and hold to pin this playlist")
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            ArtworkView(artwork: playlist.artwork, size: CGSize(width: 58, height: 58))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(playlist.name)
-                    .font(.headline)
-                    .lineLimit(2)
-
-                HStack(spacing: 6) {
-                    Text(songCountText)
-                        .foregroundStyle(.secondary)
-
-                    if isLastSelected {
-                        Text("•")
-                            .foregroundStyle(.tertiary)
-                            .accessibilityHidden(true)
-
-                        HStack(spacing: 3) {
-                            Image(systemName: "clock")
-                            Text("Last opened")
-                        }
-                        .foregroundStyle(.tint)
+        Group {
+            // At accessibility sizes the cover moves above the text, so the
+            // name gets the row's full width instead of breaking every word.
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        artwork
+                        Spacer(minLength: 8)
+                        pin
                     }
+                    titleAndDetail
                 }
-                .font(.subheadline)
-                .lineLimit(1)
-            }
-
-            Spacer(minLength: 8)
-
-            if isPinned {
-                Image(systemName: "pin.fill")
-                    .foregroundStyle(.tint)
-                    .accessibilityHidden(true)
+            } else {
+                HStack(spacing: 14) {
+                    artwork
+                    titleAndDetail
+                    Spacer(minLength: 8)
+                    pin
+                }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(playlist.name), \(songCountText)\(isPinned ? ", pinned" : "")\(isLastSelected ? ", last opened" : "")")
-        .accessibilityHint("Swipe right to \(isPinned ? "unpin" : "pin") this playlist\(isPinned ? ". Use Edit to reorder pinned playlists" : "")")
+        .accessibilityLabel(playlistAccessibilityLabel)
+        .accessibilityHint(playlistAccessibilityHint)
     }
 }
+
+/// Entry point back into the most recent queue. It is glass over the page's
+/// own colours, so it sits in the background rather than on top of it, in
+/// light mode too; the artwork carries the playlist's colours.
+private struct ContinueQueueCard: View {
+    static let transitionID = "continueQueue"
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.screenTheme) private var theme
+    @EnvironmentObject private var playbackService: MusicPlaybackService
+    @ObservedObject var viewModel: PlaylistViewModel
+    let transition: Namespace.ID
+    let open: () -> Void
+    let remove: () -> Void
+
+    private static let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+
+    /// Offered from touch and hold and from the options button.
+    private var removeButton: some View {
+        Button("Remove", systemImage: "minus.circle", role: .destructive, action: remove)
+    }
+
+    private var isLive: Bool {
+        playbackService.generatedQueueProgress?.queueID == viewModel.queueID
+    }
+
+    private var progressFraction: Double? {
+        guard let position = viewModel.playbackPosition, !viewModel.generatedOrder.isEmpty else {
+            return nil
+        }
+        return Double(position + 1) / Double(viewModel.generatedOrder.count)
+    }
+
+    private var detailText: String {
+        let count = viewModel.generatedOrder.count
+        guard let position = viewModel.playbackPosition, count > 0 else {
+            return localizedSongCount(count)
+        }
+        return String(
+            format: isLive
+                ? String(localized: "Song %lld of %lld")
+                : String(localized: "Continue from song %lld of %lld"),
+            locale: .current,
+            Int64(min(position + 1, count)),
+            Int64(count)
+        )
+    }
+
+    private var accessibilityText: String {
+        var parts = [viewModel.playlist.name]
+        if isLive {
+            parts.append(String(localized: "Now playing"))
+        }
+        parts.append(detailText)
+        return parts.joined(separator: String(localized: ", "))
+    }
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 14) {
+                PlaylistArtworkView(playlist: viewModel.playlist, size: 64)
+                    .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
+                    .zoomSource(id: Self.transitionID, in: transition)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.playlist.name)
+                        .font(.headline)
+                        .fontWidth(.expanded)
+                        .foregroundStyle(Color.primary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    HStack(spacing: 6) {
+                        if isLive {
+                            NowPlayingIndicator(isPlaying: playbackService.isPlaying)
+                        }
+                        Text(detailText)
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                    .font(.subheadline)
+                    if let progressFraction {
+                        ProgressView(value: progressFraction)
+                            .tint(Color.ember)
+                            .padding(.top, 4)
+                    }
+                }
+
+                Spacer(minLength: 4)
+
+                // Room for the options button laid over the card.
+                Color.clear
+                    .frame(width: 32, height: 1)
+            }
+            .padding(14)
+            .glassPane(in: Self.shape)
+            .contentShape(Self.shape)
+        }
+        .buttonStyle(PressableButtonStyle())
+        .contentShape(.contextMenuPreview, Self.shape)
+        .contextMenu {
+            removeButton
+        }
+        .accessibilityLabel(accessibilityText)
+        .accessibilityHint("Opens your most recent queue without changing its order")
+        .accessibilityAction(named: "Remove", remove)
+        // A visible way to the card's actions; touch and hold still works.
+        .overlay(alignment: .trailing) {
+            Menu {
+                removeButton
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(theme.secondaryText)
+                    .frame(width: 32, height: 32)
+                    .background(Color.primary.opacity(0.08), in: Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .padding(.trailing, 10)
+            .accessibilityLabel("More Options")
+        }
+    }
+}
+
+/// Search that sits at the top of the list and scrolls away with it, like
+/// the Music app's library. SwiftUI's own search drawer starts out hidden on
+/// iOS 27, so the field lives in the list instead.
+private struct PlaylistSearchField: View {
+    @Binding var text: String
+    /// Focus stays inside the row on purpose. When the screen owned it, every
+    /// focus change re-rendered the whole list, which reconfigured this row
+    /// and snapped the close button's animation to its end.
+    @FocusState private var isFocused: Bool
+    /// Set by the tap itself. Focus only arrives once the keyboard has been
+    /// set up, which left a visible pause before the field reacted.
+    @State private var isActive = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            field
+            // The button fades in its place while the field narrows to make
+            // room. It stays in the layout so the resize can't be skipped.
+            closeButton
+                .padding(.leading, 8)
+                .frame(width: isActive ? 52 : 0, alignment: .trailing)
+                .allowsHitTesting(isActive)
+                .accessibilityHidden(!isActive)
+        }
+        .frame(minHeight: 44)
+        .animation(.smooth(duration: 0.25), value: isActive)
+        .onChange(of: isFocused) { _, isFocused in
+            isActive = isFocused
+        }
+        .task(id: isActive) {
+            // A tap that never turned into focus doesn't leave the button up.
+            guard isActive, !isFocused else {
+                return
+            }
+            try? await Task.sleep(for: .seconds(1))
+            if !Task.isCancelled, !isFocused {
+                isActive = false
+            }
+        }
+    }
+
+    private var field: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TextField("Search playlists", text: $text)
+                .focused($isFocused)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        isActive = true
+                    }
+                )
+                .submitLabel(.search)
+                .autocorrectionDisabled()
+                .accessibilityAddTraits(.isSearchField)
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 36)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear Search")
+            }
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, text.isEmpty ? 12 : 0)
+        .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+        .searchGlass(in: Capsule())
+        .contentShape(Capsule())
+        .onTapGesture {
+            isActive = true
+            isFocused = true
+        }
+    }
+
+    private var closeButton: some View {
+        Button {
+            text = ""
+            // The button hides once focus has gone, in an update of its own:
+            // hidden together with the focus change, its fade was cut short.
+            if isFocused {
+                isFocused = false
+            } else {
+                isActive = false
+            }
+        } label: {
+            Image(systemName: "xmark")
+                .font(.body.weight(.medium))
+                // Bar buttons stop growing at the largest standard size and
+                // offer the large content viewer instead.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                .foregroundStyle(.primary)
+                .opacity(isActive ? 1 : 0)
+                .frame(width: 36, height: 36)
+                .searchGlass(in: Circle(), isVisible: isActive)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        // The interactive glass gives the press feedback.
+        .buttonStyle(.plain)
+        .accessibilityLabel("Cancel Search")
+        .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// The welcome screen's colour field behind the Playlists header. It drifts
+/// only while music plays, and watches playback itself so updates redraw
+/// the field rather than the whole list.
+private struct BrowserBackdrop: View {
+    @EnvironmentObject private var playbackService: MusicPlaybackService
+    let palette: ArtworkColorPalette
+    let scroll: ScrollTracker
+
+    var body: some View {
+        ScrollingFieldBackdrop(
+            palette: palette,
+            arrangement: 0,
+            isPlaying: playbackService.isPlaying,
+            fieldHeight: 460,
+            scroll: scroll
+        )
+    }
+}
+
+private extension View {
+    /// The progressive blur iOS 26 uses at the top of Music's Home, so
+    /// content fades out under the bar rather than meeting a hard edge.
+    @ViewBuilder
+    func softTopEdge() -> some View {
+        if #available(iOS 26.0, *) {
+            scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            self
+        }
+    }
+
+    /// Liquid Glass on iOS 26 and later, so the page's colours show through
+    /// as they do behind the system's own search fields; a plain fill before.
+    @ViewBuilder
+    func searchGlass(in shape: some Shape, isVisible: Bool = true) -> some View {
+        if #available(iOS 26.0, *) {
+            // Interactive glass answers the moment a finger lands, before
+            // the keyboard has been set up, like the system's own controls.
+            // Glass ignores opacity set around it once pressed, so it fades
+            // through `.identity` instead.
+            glassEffect(isVisible ? .regular.interactive() : .identity, in: shape)
+        } else {
+            background(Color(.tertiarySystemFill).opacity(isVisible ? 1 : 0), in: shape)
+        }
+    }
+}
+

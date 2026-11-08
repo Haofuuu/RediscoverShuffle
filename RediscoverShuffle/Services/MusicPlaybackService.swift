@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import MediaPlayer
+import OSLog
 
 struct GeneratedQueuePlaybackProgress: Equatable {
     let queueID: UUID
@@ -17,14 +18,16 @@ struct GeneratedQueuePlaybackIndexMapping: Equatable {
 
 @MainActor
 final class MusicPlaybackService: ObservableObject {
-    @Published private(set) var nowPlaying = NowPlayingSnapshot.empty
+    /// `nil` when the system Music player has no current item.
+    @Published private(set) var nowPlaying: NowPlayingSnapshot?
     @Published private(set) var playbackState: MPMusicPlaybackState = .stopped
     @Published private(set) var isPreparing = false
     @Published private(set) var generatedQueueProgress: GeneratedQueuePlaybackProgress?
     @Published private(set) var generatedQueueInvalidationID: UUID?
     @Published var errorMessage: String?
 
-    private let player = MPMusicPlayerController.systemMusicPlayer
+    private lazy var player = MPMusicPlayerController.systemMusicPlayer
+    private let logger = Logger(subsystem: "RediscoverShuffle", category: "Playback")
     private var notificationObservers: [NSObjectProtocol] = []
     private var trackedQueueID: UUID?
     private var trackedQueueMappings: [GeneratedQueuePlaybackIndexMapping] = []
@@ -33,6 +36,10 @@ final class MusicPlaybackService: ObservableObject {
     private var isAwaitingUnavailableItemSkip = false
 
     init() {
+        synchronizePlayerState()
+    }
+
+    private func startObservingPlayer() {
         player.beginGeneratingPlaybackNotifications()
 
         let center = NotificationCenter.default
@@ -58,18 +65,21 @@ final class MusicPlaybackService: ObservableObject {
             Task { @MainActor in self?.handleQueueDidChange() }
         })
 
-        refreshPlayerState()
     }
 
     deinit {
         let center = NotificationCenter.default
         notificationObservers.forEach(center.removeObserver)
-        player.endGeneratingPlaybackNotifications()
+        if !notificationObservers.isEmpty {
+            Task { @MainActor in
+                MPMusicPlayerController.systemMusicPlayer.endGeneratingPlaybackNotifications()
+            }
+        }
     }
 
     func setQueueAndPlay(entries: [PlaylistEntry], queueID: UUID) {
         guard !entries.isEmpty else {
-            errorMessage = "This playlist has no songs to play."
+            errorMessage = String(localized: "This playlist has no songs to play.")
             return
         }
 
@@ -97,7 +107,10 @@ final class MusicPlaybackService: ObservableObject {
                 guard let self else { return }
                 self.isPreparing = false
                 if let error {
-                    self.errorMessage = "The Music app could not prepare this queue. One or more songs may be unavailable. \(error.localizedDescription)"
+                    self.logger.error("Queue preparation failed: \(error.localizedDescription, privacy: .public)")
+                    self.errorMessage = String(
+                        localized: "Music couldn’t start this queue. A song in it may be unavailable."
+                    )
                     self.isInstallingTrackedQueue = false
                     self.isAwaitingUnavailableItemSkip = true
                     self.refreshPlayerState()
@@ -137,6 +150,13 @@ final class MusicPlaybackService: ObservableObject {
 
     /// Refreshes state that may have changed while the app was suspended.
     func synchronizePlayerState() {
+        // Reading the player before authorization can bypass the onboarding prompt.
+        guard MPMediaLibrary.authorizationStatus() == .authorized else {
+            return
+        }
+        if notificationObservers.isEmpty {
+            startObservingPlayer()
+        }
         refreshPlayerState()
     }
 
@@ -157,22 +177,64 @@ final class MusicPlaybackService: ObservableObject {
         }
     }
 
+    var isPlaying: Bool {
+        playbackState == .playing
+    }
+
+    func togglePlayPause() {
+        if isPlaying {
+            player.pause()
+        } else {
+            player.play()
+        }
+        refreshPlayerState()
+    }
+
+    func skipToNextItem() {
+        player.skipToNextItem()
+        refreshPlayerState()
+    }
+
+    /// How far into the current song Music is. Music posts no notification
+    /// as time passes, so views poll this while they are on screen.
+    var currentPlaybackTime: TimeInterval {
+        let time = player.currentPlaybackTime
+        return time.isFinite ? max(0, time) : 0
+    }
+
+    func seek(to time: TimeInterval) {
+        player.currentPlaybackTime = max(0, time)
+    }
+
+    /// Matches the Music app: a few seconds into a song, "previous" restarts it.
+    func skipToPreviousItem() {
+        if player.currentPlaybackTime > 3 {
+            player.skipToBeginning()
+        } else {
+            player.skipToPreviousItem()
+        }
+        refreshPlayerState()
+    }
+
     var playbackStateDescription: String {
         switch playbackState {
-        case .playing: return "Playing"
-        case .paused: return "Paused"
-        case .stopped: return "Stopped"
-        case .interrupted: return "Interrupted"
-        case .seekingForward: return "Seeking forward"
-        case .seekingBackward: return "Seeking backward"
-        @unknown default: return "Playback state unavailable"
+        case .playing: return String(localized: "Playing")
+        case .paused: return String(localized: "Paused")
+        case .stopped: return String(localized: "Stopped")
+        case .interrupted: return String(localized: "Interrupted")
+        case .seekingForward: return String(localized: "Seeking forward")
+        case .seekingBackward: return String(localized: "Seeking backward")
+        @unknown default: return String(localized: "Playback state unavailable")
         }
     }
 
     private func refreshPlayerState() {
+        guard MPMediaLibrary.authorizationStatus() == .authorized else {
+            return
+        }
         playbackState = player.playbackState
         guard let item = player.nowPlayingItem else {
-            nowPlaying = .empty
+            nowPlaying = nil
             if playbackState == .stopped, hasMatchedTrackedQueue {
                 clearTrackedQueue(invalidate: true)
             }
@@ -180,9 +242,11 @@ final class MusicPlaybackService: ObservableObject {
         }
 
         nowPlaying = NowPlayingSnapshot(
-            title: safeText(item.title, fallback: "Unknown Title"),
-            artist: safeText(item.artist, fallback: "Unknown Artist"),
-            artwork: item.artwork
+            id: item.persistentID,
+            title: safeText(item.title, fallback: String(localized: "Unknown Title")),
+            artist: safeText(item.artist, fallback: String(localized: "Unknown Artist")),
+            artwork: item.artwork,
+            duration: item.playbackDuration.isFinite ? max(0, item.playbackDuration) : 0
         )
         refreshGeneratedQueueProgress(with: item)
     }
