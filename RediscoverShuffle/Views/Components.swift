@@ -163,8 +163,13 @@ final class ScreenArrival {
 /// done. A swipe in that time grabs the opening and cancels it, and iOS then
 /// holds every tap until a slow return to the row has played out. So while a
 /// screen is opening, its own swipe-to-dismiss gestures pause, and a swipe
-/// back asks for Back instead, which iOS carries out the moment the opening
-/// ends, just as it does for the Back button.
+/// back asks for Back instead, which iOS carries out at once, just as it does
+/// for the Back button.
+///
+/// Once the screen has settled, the zoom only lets a swipe back start at the
+/// edge, which felt stiff next to the swipe that works while opening. So a
+/// swipe toward the trailing edge from anywhere keeps going back; swipes that
+/// start at the edge are left to the zoom, so they still follow the finger.
 private struct LeavingScreenGuard: ViewModifier {
     @State private var arrival = ScreenArrival()
 
@@ -193,8 +198,8 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
         private weak var heldScreen: UIViewController?
         /// The zoom's own dismiss gestures, paused while the screen opens.
         private var pausedZoomGestures: [UIGestureRecognizer] = []
-        /// Stands in for them while they're paused.
-        private var openingSwipeBack: UIPanGestureRecognizer?
+        /// A swipe back from anywhere on the screen.
+        private var swipeBack: UIPanGestureRecognizer?
 
         init(arrival: ScreenArrival) {
             self.arrival = arrival
@@ -237,6 +242,7 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             arrival.isSettled = true
             coordinator.animate(alongsideTransition: { [weak self, weak screen] _ in
                 MainActor.assumeIsolated {
+                    self?.installSwipeBack(on: screen)
                     self?.pauseZoomGestures(on: screen)
                 }
             })
@@ -278,6 +284,7 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
                 return
             }
             arrival.isSettled = false
+            swipeBack?.isEnabled = false
             arrival.onDeparture?(.started)
 
             guard let coordinator = transitionCoordinator else {
@@ -319,11 +326,23 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
         private func settle() {
             arrival.isSettled = true
             resumeZoomGestures()
+            swipeBack?.isEnabled = true
             heldScreen?.view.isUserInteractionEnabled = true
             heldScreen = nil
         }
 
-        // MARK: Swiping back while opening
+        // MARK: Swiping back
+
+        private func installSwipeBack(on screen: UIViewController?) {
+            guard swipeBack == nil, let view = screen?.view else {
+                return
+            }
+            let swipeBack = UIPanGestureRecognizer(target: self, action: #selector(swipedBack(_:)))
+            swipeBack.delegate = self
+            swipeBack.cancelsTouchesInView = false
+            view.addGestureRecognizer(swipeBack)
+            self.swipeBack = swipeBack
+        }
 
         /// The zoom's dismiss gestures live on the screen's own view. They
         /// are found by name; if a future iOS names them differently, nothing
@@ -335,29 +354,16 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             let zoomGestures = (view.gestureRecognizers ?? []).filter {
                 $0.isEnabled && ($0.name?.hasPrefix("com.apple.UIKit.ZoomInteractiveDismiss") ?? false)
             }
-            guard !zoomGestures.isEmpty else {
-                return
-            }
             zoomGestures.forEach { $0.isEnabled = false }
             pausedZoomGestures = zoomGestures
-
-            let swipeBack = UIPanGestureRecognizer(target: self, action: #selector(swipedBackWhileOpening(_:)))
-            swipeBack.delegate = self
-            swipeBack.cancelsTouchesInView = false
-            view.addGestureRecognizer(swipeBack)
-            openingSwipeBack = swipeBack
         }
 
         private func resumeZoomGestures() {
             pausedZoomGestures.forEach { $0.isEnabled = true }
             pausedZoomGestures = []
-            if let openingSwipeBack {
-                openingSwipeBack.view?.removeGestureRecognizer(openingSwipeBack)
-                self.openingSwipeBack = nil
-            }
         }
 
-        @objc private func swipedBackWhileOpening(_ gesture: UIPanGestureRecognizer) {
+        @objc private func swipedBack(_ gesture: UIPanGestureRecognizer) {
             guard gesture.state == .began else {
                 return
             }
@@ -365,18 +371,34 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             arrival.goBack?()
         }
 
-        /// Only a swipe toward the trailing edge, so scrolling still scrolls.
+        /// A deliberate swipe toward the trailing edge, so scrolling still
+        /// scrolls. Once the zoom's own gestures are back, swipes that start at
+        /// the edge are theirs.
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
-            guard gesture === openingSwipeBack,
+            guard gesture === swipeBack,
                   let pan = gesture as? UIPanGestureRecognizer,
                   let view = pan.view else {
                 return true
             }
+            let isRightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
             let velocity = pan.velocity(in: view)
-            let towardTrailing = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
-                ? -velocity.x
-                : velocity.x
-            return towardTrailing > abs(velocity.y)
+            let towardTrailing = isRightToLeft ? -velocity.x : velocity.x
+            guard towardTrailing > 150, towardTrailing > abs(velocity.y) else {
+                return false
+            }
+            if pausedZoomGestures.isEmpty {
+                let startX = pan.location(in: view).x - pan.translation(in: view).x
+                let fromLeadingEdge = isRightToLeft ? view.bounds.width - startX : startX
+                if fromLeadingEdge < 24 {
+                    return false
+                }
+            }
+            return true
+        }
+
+        /// Controls such as the Up Next / All Songs switcher keep their drags.
+        func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            !(gesture === swipeBack && touch.view is UIControl)
         }
 
         func gestureRecognizer(
