@@ -159,17 +159,28 @@ final class ScreenArrival {
 /// to leave, and once it is going away its view stops taking touches (for a
 /// swipe, once the finger lets go). A cancelled pop gives them back.
 ///
-/// The zoom also reports an opening finished about a second after it looks
-/// done. A swipe in that time grabs the opening and cancels it, and iOS then
-/// holds every tap until a slow return to the row has played out. So while a
-/// screen is opening, its own swipe-to-dismiss gestures pause, and a swipe
-/// back asks for Back instead, which iOS carries out at once, just as it does
-/// for the Back button.
+/// The zoom's own swipes, from the leading edge or downward, follow the
+/// finger and can catch a screen that is still opening, as in Music. When
+/// such a swipe cancels an opening, the screen glides back to its row in
+/// about a quarter of a second, but iOS only reports it gone about a second
+/// later, and until then SwiftUI still counts it as open and ignores taps
+/// that would open it again. So once the glide has had time to land, the
+/// screen is released; that skips only the invisible end of the animation.
 ///
-/// Once the screen has settled, the zoom only lets a swipe back start at the
-/// edge, which felt stiff next to the swipe that works while opening. So a
-/// swipe toward the trailing edge from anywhere keeps going back; swipes that
-/// start at the edge are left to the zoom, so they still follow the finger.
+/// That second-long tail also means the screen looks fully open well before
+/// iOS stops counting it as opening, and a swipe from the edge in that time
+/// cancelled the opening rather than going back, with the same pause before
+/// taps work. So once the zoom-in has visibly landed, the zoom's own swipes
+/// pause until iOS reports the opening finished, and a swipe from the edge
+/// goes back the way any other swipe does.
+///
+/// The zoom only lets a swipe back start at the edge. A quick swipe toward
+/// the trailing edge from anywhere else goes back too, through SwiftUI as the
+/// Back button does: popping in UIKit directly left SwiftUI counting the
+/// screen as open until the zoom back ended, so tapping the same playlist
+/// couldn't catch it. A pop during the zoom-in makes iOS snap the screen
+/// fully open first, so such a swipe waits until the zoom-in has visibly
+/// landed.
 private struct LeavingScreenGuard: ViewModifier {
     @State private var arrival = ScreenArrival()
 
@@ -196,10 +207,23 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
         private let arrival: ScreenArrival
         /// The screen whose touches this switched off, to give them back.
         private weak var heldScreen: UIViewController?
-        /// The zoom's own dismiss gestures, paused while the screen opens.
-        private var pausedZoomGestures: [UIGestureRecognizer] = []
         /// A swipe back from anywhere on the screen.
         private var swipeBack: UIPanGestureRecognizer?
+        private weak var swipeBackScreen: UIViewController?
+        /// An opening that a swipe cancelled and iOS hasn't finished yet.
+        private var isFinishingCancelledOpening = false
+        /// When the screen started zooming open, while it still is.
+        private var openingStartedAt: Date?
+        /// How long the zoom-in visibly takes; iOS reports it finished later.
+        private static let visibleZoomDuration: TimeInterval = 0.45
+        /// Whether a finger is holding the opening.
+        private var isOpeningGrabbed = false
+        /// The zoom's own dismiss gestures, paused between the zoom-in landing
+        /// and iOS reporting the opening finished.
+        private var pausedZoomGestures: [UIGestureRecognizer] = []
+        /// Whether the current touch began while they were paused. They
+        /// can't pick up a touch already under way, so it stays with ours.
+        private var touchBeganWhilePaused = false
 
         init(arrival: ScreenArrival) {
             self.arrival = arrival
@@ -240,19 +264,23 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             // it. Once grabbed its buttons wait, and if the swipe cancels the
             // opening its touches stop at the moment the finger lets go.
             arrival.isSettled = true
-            coordinator.animate(alongsideTransition: { [weak self, weak screen] _ in
-                MainActor.assumeIsolated {
-                    self?.installSwipeBack(on: screen)
-                    self?.pauseZoomGestures(on: screen)
+            openingStartedAt = .now
+            installSwipeBack(on: screen)
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.visibleZoomDuration) { [weak self, weak screen] in
+                guard let self, self.openingStartedAt != nil, !self.isOpeningGrabbed else {
+                    return
                 }
-            })
+                self.pauseZoomGestures(on: screen)
+            }
             coordinator.notifyWhenInteractionChanges { [weak self, weak screen] context in
                 MainActor.assumeIsolated {
+                    self?.isOpeningGrabbed = context.isInteractive
                     if context.isInteractive {
                         self?.arrival.isSettled = false
                     } else if context.isCancelled {
                         self?.arrival.onDeparture?(.started)
                         self?.stopTouches(on: screen)
+                        self?.releaseAfterGlide()
                     } else {
                         self?.settle()
                     }
@@ -263,6 +291,7 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
                     return
                 }
                 MainActor.assumeIsolated {
+                    self?.isFinishingCancelledOpening = false
                     self?.stopTouches(on: screen)
                     self?.arrival.onDeparture?(.finished)
                 }
@@ -316,16 +345,29 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             }
         }
 
+        private func releaseAfterGlide() {
+            isFinishingCancelledOpening = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                guard let self, self.isFinishingCancelledOpening else {
+                    return
+                }
+                self.isFinishingCancelledOpening = false
+                self.arrival.goBack?()
+            }
+        }
+
         private func stopTouches(on screen: UIViewController?) {
-            arrival.isSettled = false
+            openingStartedAt = nil
             resumeZoomGestures()
+            arrival.isSettled = false
             screen?.view.isUserInteractionEnabled = false
             heldScreen = screen
         }
 
         private func settle() {
-            arrival.isSettled = true
+            openingStartedAt = nil
             resumeZoomGestures()
+            arrival.isSettled = true
             swipeBack?.isEnabled = true
             heldScreen?.view.isUserInteractionEnabled = true
             heldScreen = nil
@@ -334,28 +376,28 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
         // MARK: Swiping back
 
         private func installSwipeBack(on screen: UIViewController?) {
-            guard swipeBack == nil, let view = screen?.view else {
+            guard swipeBack == nil, let screen else {
                 return
             }
             let swipeBack = UIPanGestureRecognizer(target: self, action: #selector(swipedBack(_:)))
             swipeBack.delegate = self
-            swipeBack.cancelsTouchesInView = false
-            view.addGestureRecognizer(swipeBack)
+            swipeBack.cancelsTouchesInView = true
+            screen.view.addGestureRecognizer(swipeBack)
             self.swipeBack = swipeBack
+            swipeBackScreen = screen
         }
 
         /// The zoom's dismiss gestures live on the screen's own view. They
         /// are found by name; if a future iOS names them differently, nothing
-        /// is paused and the zoom behaves as the system's does.
+        /// is paused and edge swipes stay with the zoom throughout.
         private func pauseZoomGestures(on screen: UIViewController?) {
             guard pausedZoomGestures.isEmpty, let view = screen?.view else {
                 return
             }
-            let zoomGestures = (view.gestureRecognizers ?? []).filter {
+            pausedZoomGestures = (view.gestureRecognizers ?? []).filter {
                 $0.isEnabled && ($0.name?.hasPrefix("com.apple.UIKit.ZoomInteractiveDismiss") ?? false)
             }
-            zoomGestures.forEach { $0.isEnabled = false }
-            pausedZoomGestures = zoomGestures
+            pausedZoomGestures.forEach { $0.isEnabled = false }
         }
 
         private func resumeZoomGestures() {
@@ -368,12 +410,32 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
                 return
             }
             gesture.isEnabled = false
+            // Leaving starts now, even if the pop waits for the zoom-in.
+            arrival.isSettled = false
+            let remainingZoom = openingStartedAt.map {
+                Self.visibleZoomDuration - Date.now.timeIntervalSince($0)
+            } ?? 0
+            guard remainingZoom > 0 else {
+                goBack()
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + remainingZoom) { [weak self] in
+                self?.goBack()
+            }
+        }
+
+        private func goBack() {
+            guard let screen = swipeBackScreen,
+                  screen.navigationController?.topViewController === screen else {
+                return
+            }
             arrival.goBack?()
         }
 
         /// A deliberate swipe toward the trailing edge, so scrolling still
-        /// scrolls. Once the zoom's own gestures are back, swipes that start at
-        /// the edge are theirs.
+        /// scrolls. While the zoom's own swipes are active, those that start
+        /// at the leading edge belong to the zoom, which lets them follow the
+        /// finger.
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
             guard gesture === swipeBack,
                   let pan = gesture as? UIPanGestureRecognizer,
@@ -386,26 +448,39 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             guard towardTrailing > 150, towardTrailing > abs(velocity.y) else {
                 return false
             }
-            if pausedZoomGestures.isEmpty {
-                let startX = pan.location(in: view).x - pan.translation(in: view).x
-                let fromLeadingEdge = isRightToLeft ? view.bounds.width - startX : startX
-                if fromLeadingEdge < 24 {
-                    return false
-                }
+            guard pausedZoomGestures.isEmpty, !touchBeganWhilePaused else {
+                return true
             }
-            return true
+            let startX = pan.location(in: view).x - pan.translation(in: view).x
+            let fromLeadingEdge = isRightToLeft ? view.bounds.width - startX : startX
+            return fromLeadingEdge >= 24
         }
 
-        /// Controls such as the Up Next / All Songs switcher keep their drags.
+        /// Controls that are dragged sideways, such as the Up Next / All Songs
+        /// switcher, keep their drags; a swipe that starts on anything else,
+        /// buttons and menus included, still goes back.
         func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            !(gesture === swipeBack && touch.view is UIControl)
+            guard gesture === swipeBack else {
+                return true
+            }
+            touchBeganWhilePaused = !pausedZoomGestures.isEmpty
+            let isDraggedSideways = sequence(first: touch.view, next: { $0?.superview })
+                .prefix { $0 != nil && $0 !== gesture.view }
+                .contains { $0 is UISegmentedControl || $0 is UISlider || $0 is UISwitch }
+            return !isDraggedSideways
         }
 
+        /// Scrolling and the zoom's own gestures run alongside the swipe.
+        /// Anything else, such as a button being pressed, gives way once the
+        /// swipe begins, so lifting the finger never presses it.
         func gestureRecognizer(
             _ gesture: UIGestureRecognizer,
             shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
         ) -> Bool {
-            true
+            guard gesture === swipeBack else {
+                return true
+            }
+            return other.view is UIScrollView || other is UIScreenEdgePanGestureRecognizer
         }
     }
 }

@@ -23,7 +23,7 @@ struct MiniPlayerBar: View {
                             .lineLimit(1)
                         Text(snapshot.artist)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.primary)
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
