@@ -597,9 +597,12 @@ private struct PlaylistSearchField: View {
     /// focus change re-rendered the whole list, which reconfigured this row
     /// and snapped the close button's animation to its end.
     @FocusState private var isFocused: Bool
-    /// Set by the tap itself. Focus only arrives once the keyboard has been
-    /// set up, which left a visible pause before the field reacted.
+    /// Set once the screen is drawing again after the tap. Taking focus
+    /// sets up the keyboard, which holds up drawing for 80–160ms, longest on
+    /// the first tap; started by the tap itself, the animation ran unseen
+    /// for that long and jumped.
     @State private var isActive = false
+    @State private var nextFrame = NextSmoothFrame()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -615,7 +618,12 @@ private struct PlaylistSearchField: View {
         .frame(minHeight: 44)
         .animation(.smooth(duration: 0.25), value: isActive)
         .onChange(of: isFocused) { _, isFocused in
-            isActive = isFocused
+            if isFocused {
+                activate()
+            } else {
+                nextFrame.cancel()
+                isActive = false
+            }
         }
         .task(id: isActive) {
             // A tap that never turned into focus doesn't leave the button up.
@@ -638,7 +646,7 @@ private struct PlaylistSearchField: View {
                 .focused($isFocused)
                 .simultaneousGesture(
                     TapGesture().onEnded {
-                        isActive = true
+                        activate()
                     }
                 )
                 .submitLabel(.search)
@@ -663,8 +671,18 @@ private struct PlaylistSearchField: View {
         .searchGlass(in: Capsule())
         .contentShape(Capsule())
         .onTapGesture {
-            isActive = true
+            activate()
             isFocused = true
+        }
+    }
+
+    private func activate() {
+        nextFrame.run {
+            // Changed from a frame callback, the `.animation` modifier let
+            // it jump, so it is animated here.
+            withAnimation(.smooth(duration: 0.25)) {
+                isActive = true
+            }
         }
     }
 
@@ -676,6 +694,7 @@ private struct PlaylistSearchField: View {
             if isFocused {
                 isFocused = false
             } else {
+                nextFrame.cancel()
                 isActive = false
             }
         } label: {
@@ -695,6 +714,48 @@ private struct PlaylistSearchField: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Cancel Search")
         .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// Runs work once frames arrive on time again, so an animation it starts
+/// is seen from its first frame. Whatever holds up drawing can do so in
+/// several stretches, such as the keyboard being set up, so a single frame
+/// between them doesn't count. It gives up waiting after half a second.
+@MainActor
+private final class NextSmoothFrame: NSObject {
+    private var link: CADisplayLink?
+    private var work: (() -> Void)?
+    private var lastFrame: CFTimeInterval?
+    private var deadline: CFTimeInterval = 0
+
+    func run(_ work: @escaping () -> Void) {
+        self.work = work
+        guard link == nil else {
+            return
+        }
+        lastFrame = nil
+        deadline = CACurrentMediaTime() + 0.5
+        let link = CADisplayLink(target: self, selector: #selector(frame(_:)))
+        link.add(to: .main, forMode: .common)
+        self.link = link
+    }
+
+    func cancel() {
+        link?.invalidate()
+        link = nil
+        work = nil
+    }
+
+    @objc private func frame(_ link: CADisplayLink) {
+        let interval = link.targetTimestamp - link.timestamp
+        let isOnTime = lastFrame.map { link.timestamp - $0 < interval * 1.5 } ?? false
+        lastFrame = link.timestamp
+        guard isOnTime || link.timestamp > deadline else {
+            return
+        }
+        let work = work
+        cancel()
+        work?()
     }
 }
 
