@@ -137,8 +137,12 @@ final class ScreenArrival {
     fileprivate(set) var isSettled = false
     /// Told when the screen starts going away and when it has gone.
     var onDeparture: ((Departure) -> Void)?
-    /// Takes the screen back, as its Back button does.
-    var goBack: (() -> Void)?
+    /// Takes the screen back, as its Back button does; `animated` is false
+    /// when iOS is already animating it away and SwiftUI only needs telling.
+    var goBack: ((_ animated: Bool) -> Void)?
+    /// Where a control drawn in SwiftUI that is dragged sideways sits, in
+    /// window coordinates, so a swipe back never starts on it.
+    var sidewaysDragFrame: CGRect = .null
 
     enum Departure {
         case started
@@ -160,26 +164,38 @@ final class ScreenArrival {
 /// to leave, and once it is going away its view stops taking touches (for a
 /// swipe, once the finger lets go). A cancelled pop gives them back.
 ///
-/// Swipes back follow the finger, as in Music. While a screen is opening,
-/// the zoom's own swipes catch it from anywhere; once it has opened, the zoom
-/// takes those from the edge and iOS's navigation swipe the rest. Letting go
-/// decides whether the screen goes back. A swipe that cancels an opening
-/// glides the screen back to its row in about a quarter of a second, but iOS
-/// only reports it gone about a second later, and until then SwiftUI still
-/// counts it as open and ignores taps that would open it again. So once the
-/// glide has had time to land, or as soon as a finger lands anywhere, the
-/// screen is released; that skips only the end of the animation.
+/// Swipes back follow the finger, as in Music, and iOS's own swipes do that:
+/// while a screen is opening, the zoom's swipes catch it from anywhere; once
+/// it has opened, the zoom takes those from the edge, and on iOS 26 the
+/// navigation stack's content swipe the rest. Letting go decides whether the
+/// screen goes back: past about half the width or with a flick toward the
+/// trailing edge it goes, otherwise it springs back.
 ///
-/// iOS's swipes can't start while another swipe is under way, and a quick
-/// flick is over before they start. So the app takes only swipes that set
-/// off fast, and a flick goes back once the finger lets go. Nothing goes back
-/// while the finger is down, and a flick never presses a button it started
-/// on.
+/// The app's own swipe is only a fallback and never competes with those.
+/// It never begins while the finger is down; it watches the touch and acts
+/// only when the finger lifts. Where iOS can follow the finger, it hands the
+/// touch over after a few hundredths of a second, so it only catches flicks
+/// that are over before iOS's swipes could have started. Where nothing else
+/// takes a swipe from the middle (iOS 17 to 25 once a screen has opened), it
+/// keeps watching until the finger lifts. Either way it decides as iOS does,
+/// goes back once the finger lets go, and gives up as soon as one of iOS's
+/// swipes starts. Buttons under the finger wait for it, so a flick never
+/// presses a button it started on, and nothing goes back while the finger
+/// is down.
+///
+/// A swipe that cancels an opening glides the screen back to its row in
+/// about a quarter of a second, but iOS only reports it gone about a second
+/// later, and until then SwiftUI still counts it as open and ignores taps
+/// that would open it again. So as soon as a finger lands anywhere, or once
+/// iOS has finished, SwiftUI is told the screen has gone, without an
+/// animation of its own. It isn't told on a timer: telling it while iOS was
+/// still finishing the glide started a second transition, which redrew the
+/// Playlists screen's bar and its soft top edge for a few frames.
 ///
 /// The app goes back through SwiftUI, as the Back button does. Popping in
 /// UIKit directly left SwiftUI counting the screen as open until the zoom
 /// back ended, so tapping the same playlist couldn't catch it. A pop during
-/// the zoom-in makes iOS snap the screen fully open first, so such a swipe
+/// the zoom-in makes iOS snap the screen fully open first, so such a flick
 /// waits until the zoom-in has visibly landed.
 private struct LeavingScreenGuard: ViewModifier {
     @State private var arrival = ScreenArrival()
@@ -207,7 +223,7 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
         private let arrival: ScreenArrival
         /// The screen whose touches this switched off, to give them back.
         private weak var heldScreen: UIViewController?
-        /// A swipe back from anywhere on the screen that iOS's own can't take.
+        /// A swipe back from the middle of the screen that iOS's own don't take.
         private var swipeBack: SwipeBackGestureRecognizer?
         private weak var swipeBackScreen: UIViewController?
         /// An opening that a swipe cancelled and iOS hasn't finished yet.
@@ -216,6 +232,12 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
         private var openingStartedAt: Date?
         /// How long the zoom-in visibly takes; iOS reports it finished later.
         private static let visibleZoomDuration: TimeInterval = 0.45
+        /// How long the app's swipe watches a touch before leaving it to
+        /// iOS's swipes, where those can follow the finger. A flick that is
+        /// over sooner is too quick for them to have started.
+        private static let handOverDelay: TimeInterval = 0.07
+        /// Swipes from this close to the leading edge belong to iOS.
+        private static let leadingEdgeWidth: CGFloat = 24
         /// Lets go of a cancelled opening the moment a finger lands.
         private var touchDownWatcher: TouchDownWatcher?
 
@@ -263,11 +285,14 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             coordinator.notifyWhenInteractionChanges { [weak self, weak screen] context in
                 MainActor.assumeIsolated {
                     if context.isInteractive {
+                        // The zoom's own swipe has the screen; the app's
+                        // stays out of it until the screen settles.
                         self?.arrival.isSettled = false
+                        self?.swipeBack?.isEnabled = false
                     } else if context.isCancelled {
                         self?.arrival.onDeparture?(.started)
                         self?.stopTouches(on: screen)
-                        self?.releaseAfterGlide()
+                        self?.releaseOnNextTouch()
                     } else {
                         self?.settle()
                     }
@@ -278,7 +303,9 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
                     return
                 }
                 MainActor.assumeIsolated {
-                    self?.endCancelledOpening()
+                    // iOS has finished, so if no finger landed meanwhile,
+                    // SwiftUI can now be told without disturbing anything.
+                    self?.releaseCancelledOpening()
                     self?.stopTouches(on: screen)
                     self?.arrival.onDeparture?(.finished)
                 }
@@ -332,18 +359,15 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             }
         }
 
-        /// Lets go of a cancelled opening once its glide back has landed,
-        /// or as soon as a finger lands anywhere, so a tap on the playlist it
-        /// is gliding into opens it again rather than being ignored.
-        private func releaseAfterGlide() {
+        /// Lets go of a cancelled opening as soon as a finger lands anywhere,
+        /// so a tap on the playlist it is gliding into opens it again rather
+        /// than being ignored. Left alone, iOS finishes the glide by itself.
+        private func releaseOnNextTouch() {
             isFinishingCancelledOpening = true
             if let window = viewIfLoaded?.window {
                 touchDownWatcher = TouchDownWatcher(in: window) { [weak self] in
                     self?.releaseCancelledOpening()
                 }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                self?.releaseCancelledOpening()
             }
         }
 
@@ -352,7 +376,9 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
                 return
             }
             endCancelledOpening()
-            arrival.goBack?()
+            // iOS is already taking the screen away; an animated pop on top
+            // of that would start a second transition.
+            arrival.goBack?(false)
         }
 
         private func endCancelledOpening() {
@@ -373,6 +399,11 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             arrival.isSettled = true
             heldScreen?.view.isUserInteractionEnabled = true
             heldScreen = nil
+            // A swipe that iOS took and then cancelled leaves the screen
+            // here, ready to be swiped again.
+            if isTopScreen {
+                swipeBack?.isEnabled = true
+            }
         }
 
         // MARK: Swiping back
@@ -389,28 +420,14 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             swipeBackScreen = screen
         }
 
+        /// Called once, as the finger lifts from a swipe that goes back.
         @objc private func swipedBack(_ gesture: SwipeBackGestureRecognizer) {
-            switch gesture.state {
-            case .began:
-                // Buttons wait while the finger is down.
-                arrival.isSettled = false
-            case .ended where isGoingBack(gesture):
-                gesture.isEnabled = false
-                goBackOnceZoomedIn()
-            case .ended, .cancelled, .failed:
-                // Still here: the screen settles again, unless it started
-                // going away some other way meanwhile.
-                if heldScreen == nil, isTopScreen {
-                    arrival.isSettled = true
-                }
-            default:
-                break
+            guard gesture.state == .ended else {
+                return
             }
-        }
-
-        /// A flick, or a deliberate drag that didn't turn back.
-        private func isGoingBack(_ swipe: SwipeBackGestureRecognizer) -> Bool {
-            swipe.speed > 500 || (swipe.distance > 100 && swipe.speed > -100)
+            arrival.isSettled = false
+            gesture.isEnabled = false
+            goBackOnceZoomedIn()
         }
 
         private func goBackOnceZoomedIn() {
@@ -430,7 +447,7 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             guard isTopScreen else {
                 return
             }
-            arrival.goBack?()
+            arrival.goBack?(true)
         }
 
         private var isTopScreen: Bool {
@@ -440,38 +457,67 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             return screen.navigationController?.topViewController === screen
         }
 
-        /// Swipes that start at the leading edge belong to the zoom, which
-        /// lets them follow the finger.
-        func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
-            guard gesture === swipeBack,
-                  let swipe = gesture as? SwipeBackGestureRecognizer,
-                  let view = swipe.view else {
+        /// Whether iOS's swipes can follow a finger from the middle of the
+        /// screen right now: on iOS 26 the navigation stack's content swipe
+        /// always can, and on iOS 18 and later the zoom's can while the
+        /// screen is still opening. Before that, only the edge swipe follows.
+        private var iOSFollowsSwipesFromTheMiddle: Bool {
+            if #available(iOS 26.0, *) {
                 return true
             }
-            let startX = swipe.startLocation.x
-            let fromLeadingEdge = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
-                ? view.bounds.width - startX
-                : startX
-            return fromLeadingEdge >= 24
+            if #available(iOS 18.0, *) {
+                return openingStartedAt != nil
+            }
+            return false
         }
 
-        /// Controls that are dragged sideways, such as the Up Next / All Songs
-        /// switcher, keep their drags; a swipe that starts on anything else,
-        /// buttons and menus included, still goes back.
-        func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        /// One of iOS's own swipes has the screen, or has just let it go.
+        private var isIOSSwipeUnderWay: Bool {
+            guard let coordinator = navigationController?.transitionCoordinator else {
+                return false
+            }
+            return coordinator.isInteractive || coordinator.initiallyInteractive || coordinator.isCancelled
+        }
+
+        /// The swipe goes back only when the screen is still here and none
+        /// of iOS's swipes took it meanwhile.
+        func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
             guard gesture === swipeBack else {
                 return true
             }
-            let isDraggedSideways = sequence(first: touch.view, next: { $0?.superview })
-                .prefix { $0 != nil && $0 !== gesture.view }
-                .contains { $0 is UISegmentedControl || $0 is UISlider || $0 is UISwitch }
-            return !isDraggedSideways
+            return isTopScreen && heldScreen == nil && !isIOSSwipeUnderWay
         }
 
-        /// Scrolling and iOS's swipes back, the zoom's and the navigation
-        /// stack's, which are all edge pans underneath, run alongside this
-        /// one. Anything else, such as a button being pressed, gives way once
-        /// the swipe begins, so lifting the finger never presses it.
+        /// Swipes that start at the leading edge belong to iOS. Controls that
+        /// are dragged sideways, such as the Up Next / All Songs switcher,
+        /// keep their drags; a swipe that starts on anything else, buttons
+        /// and menus included, can still go back.
+        func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard gesture === swipeBack, let swipe = gesture as? SwipeBackGestureRecognizer, let view = gesture.view else {
+                return true
+            }
+            let x = touch.location(in: view).x
+            let fromLeadingEdge = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
+                ? view.bounds.width - x
+                : x
+            guard fromLeadingEdge >= Self.leadingEdgeWidth else {
+                return false
+            }
+            if arrival.sidewaysDragFrame.contains(touch.location(in: nil)) {
+                return false
+            }
+            let isDraggedSideways = sequence(first: touch.view, next: { $0?.superview })
+                .prefix { $0 != nil && $0 !== view }
+                .contains { $0 is UISegmentedControl || $0 is UISlider || $0 is UISwitch }
+            guard !isDraggedSideways else {
+                return false
+            }
+            swipe.handOverDelay = iOSFollowsSwipesFromTheMiddle ? Self.handOverDelay : nil
+            return true
+        }
+
+        /// Scrolling runs alongside this swipe. Anything else that starts,
+        /// iOS's swipes back included, ends it.
         func gestureRecognizer(
             _ gesture: UIGestureRecognizer,
             shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
@@ -479,27 +525,57 @@ private struct ScreenTransitionObserver: UIViewControllerRepresentable {
             guard gesture === swipeBack else {
                 return true
             }
-            return other.view is UIScrollView || other is UIScreenEdgePanGestureRecognizer
+            return other.view is UIScrollView
+        }
+
+        /// Buttons, menus, and other taps on the screen wait to see whether
+        /// the finger is flicking the screen away, so lifting it never
+        /// presses them. Drags, scrolling and iOS's swipes among them, don't
+        /// wait; when one of them starts, this swipe ends.
+        func gestureRecognizer(
+            _ gesture: UIGestureRecognizer,
+            shouldBeRequiredToFailBy other: UIGestureRecognizer
+        ) -> Bool {
+            guard gesture === swipeBack,
+                  let view = gesture.view,
+                  let otherView = other.view,
+                  !(other is UIPanGestureRecognizer) else {
+                return false
+            }
+            return otherView.isDescendant(of: view)
         }
     }
 }
 
-/// A flick toward the trailing edge, followed from the moment the finger
-/// lands. It begins only for a swipe that sets off fast, covering 30 points
-/// within 80ms, and fails for anything slower or that turns into a scroll,
-/// so iOS's own swipes back, which follow the finger and can't start while
-/// another swipe is under way, take those.
+/// A swipe toward the trailing edge, decided when the finger lifts. It never
+/// begins while the finger is down: it recognizes as the finger lifts from a
+/// swipe that goes back, and fails for anything else, such as a tap, a
+/// scroll, a swipe that turns back, a finger that rests, or a touch it was
+/// told to hand over to iOS's swipes after `handOverDelay`.
 private final class SwipeBackGestureRecognizer: UIGestureRecognizer {
-    private(set) var startLocation: CGPoint = .zero
+    /// How long to watch before leaving the touch to iOS's swipes, or nil
+    /// to watch until the finger lifts.
+    var handOverDelay: TimeInterval?
+
+    private var startLocation: CGPoint = .zero
     private var startTime: TimeInterval = 0
     private var samples: [(location: CGPoint, time: TimeInterval)] = []
+    private var watch = 0
 
-    private static let turnDistance: CGFloat = 12
-    private static let fastDistance: CGFloat = 30
-    private static let fastTime: TimeInterval = 0.08
+    /// Movement that still counts as a finger at rest, or as a swipe
+    /// holding its line.
+    private static let slop: CGFloat = 12
+    /// A finger that hasn't set off by then is pressing, not swiping. Kept
+    /// short, as buttons wait this long to show they're pressed; the list's
+    /// scrolling already holds them back about as long.
+    private static let restLimit: TimeInterval = 0.08
+    /// Like UIKit's own swipes back: a flick goes back from any distance
+    /// past a small one, and a slow swipe once it has passed half the width.
+    private static let flickSpeed: CGFloat = 300
+    private static let flickDistance: CGFloat = 16
 
     /// How far the finger has gone toward the trailing edge.
-    var distance: CGFloat {
+    private var distance: CGFloat {
         guard let last = samples.last else {
             return 0
         }
@@ -508,7 +584,7 @@ private final class SwipeBackGestureRecognizer: UIGestureRecognizer {
 
     /// How fast the finger was last moving toward the trailing edge, in
     /// points per second.
-    var speed: CGFloat {
+    private var speed: CGFloat {
         guard let last = samples.last,
               let first = samples.first(where: { last.time - $0.time <= 0.06 }),
               last.time > first.time else {
@@ -521,57 +597,82 @@ private final class SwipeBackGestureRecognizer: UIGestureRecognizer {
         view?.effectiveUserInterfaceLayoutDirection == .rightToLeft ? -1 : 1
     }
 
+    private var isGoingBack: Bool {
+        let width = view?.bounds.width ?? 0
+        if speed >= Self.flickSpeed {
+            return distance >= Self.flickDistance
+        }
+        return width > 0 && distance >= width / 2 && speed > -Self.flickSpeed
+    }
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
         // One finger only; a second one ends the swipe.
         guard samples.isEmpty, touches.count == 1, let touch = touches.first else {
-            state = state == .possible ? .failed : .cancelled
+            state = .failed
             return
         }
         startLocation = touch.location(in: view)
         startTime = touch.timestamp
         samples = [(startLocation, startTime)]
+
+        watch += 1
+        let currentWatch = watch
+        let handsOver = handOverDelay != nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + (handOverDelay ?? Self.restLimit)) { [weak self] in
+            guard let self, self.watch == currentWatch, self.state == .possible else {
+                return
+            }
+            if handsOver || self.distance < Self.slop {
+                self.state = .failed
+            }
+        }
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesMoved(touches, with: event)
-        guard let touch = touches.first else {
+        guard state == .possible, let touch = touches.first else {
             return
         }
+        record(touch)
         let location = touch.location(in: view)
-        samples.append((location, touch.timestamp))
-        samples.removeAll { touch.timestamp - $0.time > 0.1 }
-
-        guard state == .possible else {
-            if state == .began || state == .changed {
-                state = .changed
-            }
-            return
-        }
         let across = (location.x - startLocation.x) * towardTrailing
         let down = abs(location.y - startLocation.y)
-        if touch.timestamp - startTime > Self.fastTime
-            || across < -Self.turnDistance
-            || down > max(Self.turnDistance, across) {
+        let elapsed = touch.timestamp - startTime
+        if across < -Self.slop
+            || down > max(Self.slop, across)
+            || handOverDelay.map({ elapsed > $0 }) == true {
             state = .failed
-        } else if across >= Self.fastDistance {
-            state = .began
         }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesEnded(touches, with: event)
-        state = state == .began || state == .changed ? .ended : .failed
+        guard state == .possible else {
+            return
+        }
+        if let touch = touches.first {
+            record(touch)
+        }
+        state = isGoingBack ? .ended : .failed
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesCancelled(touches, with: event)
-        state = state == .began || state == .changed ? .cancelled : .failed
+        if state == .possible {
+            state = .failed
+        }
     }
 
     override func reset() {
         super.reset()
         samples = []
+        watch += 1
+    }
+
+    private func record(_ touch: UITouch) {
+        samples.append((touch.location(in: view), touch.timestamp))
+        samples.removeAll { touch.timestamp - $0.time > 0.1 }
     }
 }
 
@@ -608,6 +709,121 @@ private final class TouchDownWatcher: UIGestureRecognizer, UIGestureRecognizerDe
         shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
     ) -> Bool {
         true
+    }
+}
+
+// MARK: - Segmented switcher
+
+/// A segmented control drawn in SwiftUI, used on iOS 26 and later. There the
+/// system's segmented control draws its selected segment through Liquid
+/// Glass, and while a swipe back shrinks the page to follow the finger, the
+/// glass applied the shrink a second time, so the selected label showed up
+/// twice. This one draws plain shapes, which shrink with the page.
+///
+/// Tap a segment or drag the thumb across, as with the system control; the
+/// change animates with the binding's animation. Its frame is kept in the
+/// screen's `ScreenArrival`, so a drag on it never turns into a swipe back,
+/// and VoiceOver sees a standard segmented picker.
+struct SegmentedSwitcher<Value: Hashable>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.screenArrival) private var screenArrival
+    let title: LocalizedStringKey
+    @Binding var selection: Value
+    let options: [(value: Value, label: Text)]
+    /// The segment under the finger while it is down.
+    @State private var trackedValue: Value?
+    @State private var width: CGFloat = 0
+    @Namespace private var thumbSpace
+
+    private static var inset: CGFloat { 2 }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options.indices, id: \.self) { index in
+                let option = options[index]
+                let isShown = option.value == (trackedValue ?? selection)
+                option.label
+                    .font(.subheadline.weight(isShown ? .semibold : .medium))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 8)
+                    .frame(maxWidth: .infinity, minHeight: 30)
+                    .background {
+                        if isShown {
+                            Capsule()
+                                .fill(thumbColor)
+                                .shadow(color: .black.opacity(colorScheme == .dark ? 0 : 0.12), radius: 3, y: 1)
+                                .matchedGeometryEffect(id: "thumb", in: thumbSpace)
+                        }
+                    }
+            }
+        }
+        .padding(Self.inset)
+        .background(Color.primary.opacity(0.08), in: Capsule())
+        .contentShape(Capsule())
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { newWidth in
+            width = newWidth
+        }
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { frame in
+            screenArrival?.sidewaysDragFrame = frame
+        }
+        .onDisappear {
+            screenArrival?.sidewaysDragFrame = .null
+        }
+        .gesture(drag)
+        .accessibilityRepresentation {
+            Picker(title, selection: $selection) {
+                ForEach(options.indices, id: \.self) { index in
+                    options[index].label.tag(options[index].value)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    /// A white thumb on the light page; a lighter pane on the dark one.
+    private var thumbColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.2) : Color.white.opacity(0.92)
+    }
+
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let segment = option(at: value.location.x)
+                guard segment != trackedValue else {
+                    return
+                }
+                withAnimation(reduceMotion ? nil : .strongEaseOut(duration: 0.2)) {
+                    trackedValue = segment
+                }
+            }
+            .onEnded { value in
+                let chosen = option(at: value.location.x)
+                // A drag that went up or down was meant for the list, so it
+                // leaves the switcher as it was.
+                let isVertical = abs(value.translation.height) > max(20, abs(value.translation.width))
+                withAnimation(reduceMotion ? nil : .strongEaseOut(duration: 0.2)) {
+                    trackedValue = nil
+                }
+                if !isVertical, chosen != selection {
+                    selection = chosen
+                }
+            }
+    }
+
+    private func option(at x: CGFloat) -> Value {
+        let segmentWidth = (width - Self.inset * 2) / CGFloat(max(options.count, 1))
+        guard segmentWidth > 0, !options.isEmpty else {
+            return selection
+        }
+        let index = Int(((x - Self.inset) / segmentWidth).rounded(.down))
+        return options[min(max(index, 0), options.count - 1)].value
     }
 }
 

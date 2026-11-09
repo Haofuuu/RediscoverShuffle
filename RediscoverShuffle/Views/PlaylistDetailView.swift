@@ -121,8 +121,16 @@ struct PlaylistDetailView: View {
         .onAppear {
             rediscoveryStrength = normalizedStrength
             songSortRawValue = songSortOption.rawValue
-            screenArrival?.goBack = { [dismiss] in
-                dismiss()
+            screenArrival?.goBack = { [dismiss] animated in
+                guard !animated else {
+                    dismiss()
+                    return
+                }
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    dismiss()
+                }
             }
             screenArrival?.onDeparture = { [viewModel] departure in
                 switch departure {
@@ -398,12 +406,7 @@ struct PlaylistDetailView: View {
 
     private var sectionHeader: some View {
         HStack(spacing: 12) {
-            Picker("Show", selection: $listMode.animation(.strongEaseOut(duration: 0.2))) {
-                Text("Up Next").tag(ListMode.upNext)
-                Text("All Songs").tag(ListMode.allSongs)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            listModePicker
 
             if listMode == .allSongs {
                 Menu {
@@ -424,6 +427,31 @@ struct PlaylistDetailView: View {
         }
         .padding(.vertical, 6)
         .textCase(nil)
+    }
+
+    /// The system's segmented control before iOS 26; from iOS 26 one drawn
+    /// in SwiftUI, because the system's glass one draws its selected label
+    /// twice while a swipe back shrinks the page.
+    @ViewBuilder
+    private var listModePicker: some View {
+        let selection = $listMode.animation(.strongEaseOut(duration: 0.2))
+        if #available(iOS 26.0, *) {
+            SegmentedSwitcher(
+                title: "Show",
+                selection: selection,
+                options: [
+                    (value: .upNext, label: Text("Up Next")),
+                    (value: .allSongs, label: Text("All Songs")),
+                ]
+            )
+        } else {
+            Picker("Show", selection: selection) {
+                Text("Up Next").tag(ListMode.upNext)
+                Text("All Songs").tag(ListMode.allSongs)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
     }
 
     @ViewBuilder
