@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import UIKit.UIGestureRecognizerSubclass
 
 struct PlaylistBrowserView: View {
     @Environment(\.editMode) private var editMode
@@ -668,6 +670,13 @@ private struct PlaylistSearchField: View {
         .padding(.leading, 12)
         .padding(.trailing, text.isEmpty ? 12 : 0)
         .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+        .background {
+            // The clear button handles its own taps.
+            MovingListTapCatcher(skipsTrailingWidth: text.isEmpty ? 0 : 44) {
+                activate()
+                isFocused = true
+            }
+        }
         .searchGlass(in: Capsule())
         .contentShape(Capsule())
         .onTapGesture {
@@ -714,6 +723,201 @@ private struct PlaylistSearchField: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Cancel Search")
         .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// Catches a tap on the search field that lands while the list is still
+/// gliding or bouncing back to the top, and calls `onTap` for it.
+///
+/// A touch on a moving scroll view only stops the scroll and never reaches
+/// the content: the field's interactive glass lights up on touch-down, but
+/// neither its tap gesture nor the text field sees the tap. Bouncing back
+/// into place has a long, almost invisible tail, so the list looks still
+/// while it is still moving, and the field seemed to ignore taps after any
+/// scroll back to the top. At rest this does nothing, and the field's own
+/// tap handling stays in charge.
+private struct MovingListTapCatcher: UIViewRepresentable {
+    /// Width at the field's trailing edge to leave alone, such as a button.
+    var skipsTrailingWidth: CGFloat
+    let onTap: () -> Void
+
+    func makeUIView(context: Context) -> MovingListTapCatcherView {
+        let view = MovingListTapCatcherView()
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        view.isAccessibilityElement = false
+        updateUIView(view, context: context)
+        return view
+    }
+
+    func updateUIView(_ view: MovingListTapCatcherView, context: Context) {
+        view.skipsTrailingWidth = skipsTrailingWidth
+        view.onTap = onTap
+    }
+
+    static func dismantleUIView(_ view: MovingListTapCatcherView, coordinator: ()) {
+        view.stopWatching()
+    }
+}
+
+/// Sits behind the field, matching its frame, and watches its window's
+/// touches while it is in one.
+private final class MovingListTapCatcherView: UIView {
+    var skipsTrailingWidth: CGFloat = 0
+    var onTap: (() -> Void)?
+    private var watcher: MovingListTapWatcher?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        stopWatching()
+        if let window {
+            let watcher = MovingListTapWatcher(field: self)
+            window.addGestureRecognizer(watcher)
+            self.watcher = watcher
+        }
+    }
+
+    func stopWatching() {
+        if let watcher {
+            watcher.view?.removeGestureRecognizer(watcher)
+        }
+        watcher = nil
+    }
+
+    /// The list the field scrolls with, when it is gliding or bouncing.
+    func movingScrollView() -> UIScrollView? {
+        var ancestor = superview
+        while let view = ancestor {
+            if let scrollView = view as? UIScrollView {
+                return isMoving(scrollView) ? scrollView : nil
+            }
+            ancestor = view.superview
+        }
+        return nil
+    }
+
+    private func isMoving(_ scrollView: UIScrollView) -> Bool {
+        if scrollView.isDecelerating {
+            return true
+        }
+        // Bouncing back from a pull past either end.
+        let inset = scrollView.adjustedContentInset
+        let offset = scrollView.contentOffset.y
+        let top = -inset.top
+        let bottom = max(top, scrollView.contentSize.height + inset.bottom - scrollView.bounds.height)
+        return offset < top - 0.5 || offset > bottom + 0.5
+    }
+
+    /// Whether a point, in this view's coordinates, is on the field's own
+    /// text area.
+    func isOnField(_ point: CGPoint) -> Bool {
+        var area = bounds
+        area.size.width -= min(skipsTrailingWidth, area.width)
+        if effectiveUserInterfaceLayoutDirection == .rightToLeft {
+            area.origin.x = bounds.maxX - area.width
+        }
+        return area.contains(point)
+    }
+}
+
+/// Follows one finger from touch-down to lift without ever taking the touch
+/// from anything, and reports a short, still tap on the field that began
+/// while its list was moving.
+@MainActor
+private final class MovingListTapWatcher: UIGestureRecognizer, UIGestureRecognizerDelegate {
+    private static let maxDuration: TimeInterval = 0.5
+    private static let maxMovement: CGFloat = 10
+
+    private weak var field: MovingListTapCatcherView?
+    /// The field's list if it was moving as the finger landed. Read before
+    /// any gesture sees the touch, since the list stops once one does.
+    private weak var movingScrollView: UIScrollView?
+    private var start: (location: CGPoint, time: TimeInterval)?
+
+    init(field: MovingListTapCatcherView) {
+        self.field = field
+        super.init(target: nil, action: nil)
+        cancelsTouchesInView = false
+        delaysTouchesBegan = false
+        delaysTouchesEnded = false
+        delegate = self
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesBegan(touches, with: event)
+        guard start == nil,
+              touches.count == 1,
+              event.allTouches?.count == 1,
+              let touch = touches.first,
+              let window = view as? UIWindow,
+              let field,
+              field.window === window,
+              let scrollView = movingScrollView ?? field.movingScrollView(),
+              field.isOnField(touch.location(in: field)),
+              // Something covering the field, such as a sheet or a pushed
+              // playlist, keeps the touch.
+              window.hitTest(touch.location(in: window), with: event)?
+                  .isDescendant(of: scrollView) == true else {
+            state = .failed
+            return
+        }
+        start = (touch.location(in: window), touch.timestamp)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesMoved(touches, with: event)
+        guard let touch = touches.first, isStill(touch) else {
+            state = .failed
+            return
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesEnded(touches, with: event)
+        if let touch = touches.first,
+           isStill(touch),
+           let field,
+           field.isOnField(touch.location(in: field)) {
+            // After the touch has finished, so the list has stopped first.
+            DispatchQueue.main.async { [weak field] in
+                field?.onTap?()
+            }
+        }
+        state = .failed
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesCancelled(touches, with: event)
+        state = .failed
+    }
+
+    override func reset() {
+        super.reset()
+        start = nil
+        movingScrollView = nil
+    }
+
+    private func isStill(_ touch: UITouch) -> Bool {
+        guard let start, let window = view else {
+            return false
+        }
+        let location = touch.location(in: window)
+        return touch.timestamp - start.time <= Self.maxDuration
+            && hypot(location.x - start.location.x, location.y - start.location.y) <= Self.maxMovement
+    }
+
+    func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if start == nil {
+            movingScrollView = field?.movingScrollView()
+        }
+        return true
+    }
+
+    func gestureRecognizer(
+        _ gesture: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
+    ) -> Bool {
+        true
     }
 }
 
