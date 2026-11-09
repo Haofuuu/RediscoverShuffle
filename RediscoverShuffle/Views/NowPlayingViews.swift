@@ -102,12 +102,16 @@ struct NowPlayingSheet: View {
     @State private var transportTaps = 0
     @State private var contentWidth: CGFloat = 320
 
-    private var liveQueue: PlaylistViewModel? {
-        guard let viewModel = generatedQueueSession.lastQueueViewModel,
-              playbackService.generatedQueueProgress?.queueID == viewModel.queueID else {
+    /// What Music is playing from, and where it is. This follows the order
+    /// Music was handed, not the playlist page's, which a reshuffle changes
+    /// before Play is tapped again.
+    private var liveQueue: (queue: GeneratedQueueSession.PlayingQueue, progress: GeneratedQueuePlaybackProgress)? {
+        guard let queue = generatedQueueSession.playingQueue,
+              let progress = playbackService.generatedQueueProgress,
+              progress.queueID == queue.queueID else {
             return nil
         }
-        return viewModel
+        return (queue, progress)
     }
 
     private var palette: ArtworkColorPalette {
@@ -134,7 +138,7 @@ struct NowPlayingSheet: View {
                 }
 
                 if let liveQueue {
-                    upNextSection(liveQueue)
+                    upNextSection(liveQueue.queue, progress: liveQueue.progress)
                 }
             }
             .listStyle(.plain)
@@ -178,6 +182,9 @@ struct NowPlayingSheet: View {
                 dismiss()
             }
         }
+        // Music can't always say where it is in the queue the moment the app
+        // launches, which left Up Next out until the next song.
+        .onAppear(perform: playbackService.synchronizePlayerState)
     }
 
     private func playerHeader(_ snapshot: NowPlayingSnapshot) -> some View {
@@ -267,9 +274,14 @@ struct NowPlayingSheet: View {
         .accessibilityLabel(label)
     }
 
-    private func upNextSection(_ viewModel: PlaylistViewModel) -> some View {
-        let isCurrentVisible = playbackService.generatedQueueProgress?.isCurrentEntryVisible == true
-        let upcoming = Array(viewModel.visibleGeneratedOrder.dropFirst(isCurrentVisible ? 1 : 0))
+    private func upNextSection(
+        _ queue: GeneratedQueueSession.PlayingQueue,
+        progress: GeneratedQueuePlaybackProgress
+    ) -> some View {
+        let upcoming = Array(
+            QueueProgress.remainingItems(in: queue.entries, from: progress.position)
+                .dropFirst(progress.isCurrentEntryVisible ? 1 : 0)
+        )
 
         return Section {
             if upcoming.isEmpty {
@@ -282,7 +294,7 @@ struct NowPlayingSheet: View {
                     TrackRow(
                         entry: entry,
                         position: offset + 1,
-                        freshness: viewModel.playlist.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
+                        freshness: queue.playlist.rediscoveryInsight.freshness(forPlayCount: entry.playCount),
                         showPlayCount: showPlayCounts
                     )
                     .listRowBackground(Color.clear)
@@ -295,7 +307,7 @@ struct NowPlayingSheet: View {
                     .font(.title3.bold())
                     .foregroundStyle(Color.primary)
                 Text(
-                    String(format: String(localized: "From %@"), locale: .current, viewModel.playlist.name)
+                    String(format: String(localized: "From %@"), locale: .current, queue.playlist.name)
                 )
                 .font(.subheadline)
                 .foregroundStyle(Color(palette.secondaryText))

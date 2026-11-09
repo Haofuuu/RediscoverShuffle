@@ -31,6 +31,9 @@ final class MusicPlaybackService: ObservableObject {
     private var notificationObservers: [NSObjectProtocol] = []
     private var trackedQueueID: UUID?
     private var trackedQueueMappings: [GeneratedQueuePlaybackIndexMapping] = []
+    /// Where in the tracked order Music was last found, for when it can't
+    /// say where it is.
+    private var expectedTrackedPosition: Int?
     private var hasMatchedTrackedQueue = false
     private var isInstallingTrackedQueue = false
     private var isAwaitingUnavailableItemSkip = false
@@ -93,6 +96,7 @@ final class MusicPlaybackService: ObservableObject {
                 isVisibleEntry: true
             )
         }
+        expectedTrackedPosition = 0
         hasMatchedTrackedQueue = false
         isInstallingTrackedQueue = true
         isAwaitingUnavailableItemSkip = false
@@ -126,7 +130,8 @@ final class MusicPlaybackService: ObservableObject {
     /// current item and duplicate-safe queue index match the saved order.
     func restoreQueueTracking(
         queueID: UUID,
-        mappings: [GeneratedQueuePlaybackIndexMapping]
+        mappings: [GeneratedQueuePlaybackIndexMapping],
+        expectedPosition: Int?
     ) {
         guard !mappings.isEmpty else {
             return
@@ -134,6 +139,7 @@ final class MusicPlaybackService: ObservableObject {
 
         trackedQueueID = queueID
         trackedQueueMappings = mappings
+        expectedTrackedPosition = expectedPosition
         hasMatchedTrackedQueue = false
         isInstallingTrackedQueue = false
         isAwaitingUnavailableItemSkip = false
@@ -268,6 +274,7 @@ final class MusicPlaybackService: ObservableObject {
             }
             return
         case let .match(playerIndex, mapping):
+            expectedTrackedPosition = playerIndex
             hasMatchedTrackedQueue = true
             isAwaitingUnavailableItemSkip = false
             if !isPreparing {
@@ -292,18 +299,27 @@ final class MusicPlaybackService: ObservableObject {
         for item: MPMediaItem,
         in mappings: [GeneratedQueuePlaybackIndexMapping]
     ) -> QueueMatchResult {
+        let queueIDs = mappings.map(\.mediaItemPersistentID)
         let playerIndex = player.indexOfNowPlayingItem
         guard playerIndex != NSNotFound else {
-            return .unavailable
-        }
-        guard mappings.indices.contains(playerIndex) else {
-            return .mismatch
+            // Music can't always say where it is, such as in a queue it was
+            // handed before the app last launched. The song is then looked
+            // for where the order was expected to be; one that isn't in the
+            // order waits for Music to say more.
+            guard let position = QueueProgress.nearestPosition(
+                of: item.persistentID,
+                in: queueIDs,
+                expectedPosition: expectedTrackedPosition ?? 0
+            ) else {
+                return .unavailable
+            }
+            return .match(position, mappings[position])
         }
 
         guard QueueProgress.matchingPosition(
             playerIndex: playerIndex,
             nowPlayingID: item.persistentID,
-            queueIDs: mappings.map(\.mediaItemPersistentID)
+            queueIDs: queueIDs
         ) != nil else {
             return .mismatch
         }
@@ -311,18 +327,22 @@ final class MusicPlaybackService: ObservableObject {
         return .match(playerIndex, mappings[playerIndex])
     }
 
+    /// A queue change alone doesn't end tracking: Up Next stays while the
+    /// song playing still sits where the tracked order puts it, and ends at
+    /// the first song that doesn't, such as when Music plays something else.
     private func handleQueueDidChange() {
         guard trackedQueueID != nil, !isInstallingTrackedQueue else {
             return
         }
 
-        clearTrackedQueue(invalidate: true)
+        refreshPlayerState()
     }
 
     private func clearTrackedQueue(invalidate: Bool) {
         let invalidatedQueueID = trackedQueueID
         trackedQueueID = nil
         trackedQueueMappings = []
+        expectedTrackedPosition = nil
         hasMatchedTrackedQueue = false
         isInstallingTrackedQueue = false
         isAwaitingUnavailableItemSkip = false
