@@ -246,7 +246,7 @@ struct PlaylistDetailView: View {
                     }
                 }
                 .presentationCompactAdaptation(.popover)
-                .seeThroughPopoverBackground()
+                .opaquePopoverBackground()
         }
     }
 
@@ -628,6 +628,9 @@ private struct RediscoveryInfoView: View {
         .padding(20)
         .frame(idealWidth: 320, maxWidth: 360, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
+        // Plain primary and secondary label colours against the opaque
+        // background below, never vibrant or artwork-tinted ones.
+        .foregroundStyle(.primary)
     }
 
     private func term(_ title: String, systemImage: String?, definition: String) -> some View {
@@ -651,14 +654,15 @@ private struct RediscoveryInfoView: View {
 }
 
 private extension View {
-    /// Liquid Glass, which iOS 26 and later give popovers on their own; a
-    /// see-through material before that.
-    @ViewBuilder
-    func seeThroughPopoverBackground() -> some View {
-        if #available(iOS 26.0, *) {
-            self
-        } else {
-            presentationBackground(.ultraThinMaterial)
-        }
+    /// An opaque system background on every iOS version, replacing the
+    /// Liquid Glass iOS 26 and later give popovers on their own and any
+    /// see-through material. The popover sits over a vivid, often dark,
+    /// artwork-coloured field, and through glass that field's colours
+    /// washed out the explanation's text. `systemBackground` adapts to
+    /// light and dark mode and, as a popover is an elevated presentation,
+    /// resolves to the elevated grey in dark mode, so `.primary` and
+    /// `.secondary` text keep their full contrast whatever the artwork.
+    func opaquePopoverBackground() -> some View {
+        presentationBackground(Color(.systemBackground))
     }
 }
