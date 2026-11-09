@@ -15,6 +15,10 @@ struct StoredGeneratedQueue: Codable, Equatable {
     let playbackPosition: Int?
     let submittedQueueID: UUID?
     let playbackPlayerIndex: Int?
+    /// The order Music was handed, saved only once a reshuffle has dealt a
+    /// new one since; otherwise `entries` is that order. Files saved before
+    /// this existed leave it out.
+    var playingEntries: [Entry]? = nil
 }
 
 struct GeneratedQueueStore {

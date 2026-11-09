@@ -198,7 +198,7 @@ struct PlaylistDetailView: View {
     }
 
     /// The song count and what's waiting to be rediscovered. When there is
-    /// something waiting, tapping it explains what the words mean.
+    /// something waiting, the ⓘ beside it explains what the words mean.
     @ViewBuilder
     private var rediscoverySummary: some View {
         if viewModel.playlist.rediscoveryInsight.isEmpty {
@@ -206,36 +206,47 @@ struct PlaylistDetailView: View {
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
         } else {
-            Button {
-                // iOS holds a popover requested mid-transition and shows it
-                // afterwards, over whatever screen is then on top.
-                guard !isLeaving else {
-                    return
-                }
-                showsRediscoveryInfo = true
-            } label: {
-                (headerSubtitle
-                    + Text(verbatim: " ")
-                    + Text(Image(systemName: "info.circle")).foregroundStyle(Color(palette.secondaryText)))
+            // The ⓘ keeps a full-size target, pulled in so it sits as close
+            // to the words as a space would.
+            HStack(spacing: -8) {
+                headerSubtitle
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+                rediscoveryInfoButton
             }
-            .buttonStyle(.plain)
-            .accessibilityHint("Explains unplayed and overlooked songs")
-            .popover(isPresented: $showsRediscoveryInfo) {
-                RediscoveryInfoView()
-                    .onAppear {
-                        // The last guard: an explanation that belongs to a
-                        // screen that has gone never stays over the next one.
-                        if isLeaving {
-                            showsRediscoveryInfo = false
-                        }
+            .frame(minHeight: 44)
+        }
+    }
+
+    private var rediscoveryInfoButton: some View {
+        Button {
+            // iOS holds a popover requested mid-transition and shows it
+            // afterwards, over whatever screen is then on top.
+            guard !isLeaving else {
+                return
+            }
+            showsRediscoveryInfo = true
+        } label: {
+            Image(systemName: "info.circle")
+                .font(.subheadline)
+                .foregroundStyle(Color(palette.secondaryText))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("How Rediscovery Works")
+        .accessibilityHint("Explains unplayed and overlooked songs")
+        .popover(isPresented: $showsRediscoveryInfo) {
+            RediscoveryInfoView()
+                .onAppear {
+                    // The last guard: an explanation that belongs to a
+                    // screen that has gone never stays over the next one.
+                    if isLeaving {
+                        showsRediscoveryInfo = false
                     }
-                    .presentationCompactAdaptation(.popover)
-                    .presentationBackground(.thickMaterial)
-            }
+                }
+                .presentationCompactAdaptation(.popover)
+                .seeThroughPopoverBackground()
         }
     }
 
@@ -636,5 +647,18 @@ private struct RediscoveryInfoView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+private extension View {
+    /// Liquid Glass, which iOS 26 and later give popovers on their own; a
+    /// see-through material before that.
+    @ViewBuilder
+    func seeThroughPopoverBackground() -> some View {
+        if #available(iOS 26.0, *) {
+            self
+        } else {
+            presentationBackground(.ultraThinMaterial)
+        }
     }
 }

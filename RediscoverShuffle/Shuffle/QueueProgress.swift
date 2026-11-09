@@ -21,6 +21,24 @@ enum QueueProgress {
         return playerIndex
     }
 
+    /// Where the song Music is playing sits in the generated order when
+    /// Music can't say, as for a queue it was handed before the app last
+    /// launched: the occurrence nearest to where the order was expected to
+    /// be, and the later one if two are as near.
+    static func nearestPosition<ID: Equatable>(
+        of nowPlayingID: ID,
+        in queueIDs: [ID],
+        expectedPosition: Int
+    ) -> Int? {
+        queueIDs.indices
+            .filter { queueIDs[$0] == nowPlayingID }
+            .min { first, second in
+                let firstDistance = abs(first - expectedPosition)
+                let secondDistance = abs(second - expectedPosition)
+                return firstDistance == secondDistance ? first > second : firstDistance < secondDistance
+            }
+    }
+
     static func startIndex(savedPosition: Int?, itemCount: Int) -> Int {
         guard let savedPosition else {
             return 0

@@ -16,6 +16,17 @@ struct QueueProgressTests {
         )
     }
 
+    @Test("Without Music's index, the occurrence nearest the expected place wins")
+    func nearestOccurrenceWhenIndexIsUnknown() {
+        let queue = [10, 20, 30, 20, 40]
+
+        #expect(QueueProgress.nearestPosition(of: 20, in: queue, expectedPosition: 0) == 1)
+        #expect(QueueProgress.nearestPosition(of: 20, in: queue, expectedPosition: 4) == 3)
+        #expect(QueueProgress.nearestPosition(of: 20, in: queue, expectedPosition: 2) == 3)
+        #expect(QueueProgress.nearestPosition(of: 40, in: queue, expectedPosition: 0) == 4)
+        #expect(QueueProgress.nearestPosition(of: 50, in: queue, expectedPosition: 0) == nil)
+    }
+
     @Test("A mismatched item or invalid index is rejected")
     func invalidSnapshotsAreRejected() {
         let queue = [10, 20, 30]

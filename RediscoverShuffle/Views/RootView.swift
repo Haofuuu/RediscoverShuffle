@@ -88,18 +88,14 @@ struct RootView: View {
         }
         .onReceive(libraryService.$playlists) { playlists in
             playlistCoverStore.reload(for: playlists)
-            guard let restoration = generatedQueueSession.restoreIfNeeded(from: playlists) else {
+            guard let tracking = generatedQueueSession.restoreIfNeeded(from: playlists) else {
                 return
             }
-
-            if generatedQueueSession.shouldRestorePlaybackTracking(
-                for: restoration.viewModel.queueID
-            ) {
-                playbackService.restoreQueueTracking(
-                    queueID: restoration.viewModel.queueID,
-                    mappings: restoration.playbackIndexMappings
-                )
-            }
+            playbackService.restoreQueueTracking(
+                queueID: tracking.queueID,
+                mappings: tracking.mappings,
+                expectedPosition: tracking.expectedPosition
+            )
         }
         .onReceive(playbackService.$generatedQueueProgress) { progress in
             guard let progress else {
