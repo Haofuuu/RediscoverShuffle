@@ -8,6 +8,7 @@ struct RootView: View {
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
     @EnvironmentObject private var playlistCoverStore: PlaylistCoverStore
+    @StateObject private var pageStage = PlaylistPageStage()
     @State private var showsNowPlaying = false
     @State private var bottomSafeArea: CGFloat = 0
     @State private var isKeyboardVisible = false
@@ -29,12 +30,24 @@ struct RootView: View {
         NavigationStack {
             if libraryService.authorizationStatus == .authorized {
                 PlaylistBrowserView()
+                    .marksBrowser(for: pageStage)
             } else {
                 PermissionView()
             }
         }
-        // Set on the screens only: the full player's own field keeps moving.
+        .environment(\.pageStage, pageStage)
+        // Covered is set on the screens only: the full player's own field
+        // keeps moving.
         .environment(\.isCoveredBySheet, showsNowPlaying)
+        // Playlist pages open over the Playlists screen and under the mini
+        // player, which stays where it is as they come and go.
+        .overlay {
+            PlaylistPageStageLayer(
+                stage: pageStage,
+                deviceBottomInset: bottomSafeArea,
+                isCoveredBySheet: showsNowPlaying
+            )
+        }
         .floatingBottomBar {
             // Like the system's bottom bars, the mini player stays behind the
             // keyboard while search is being typed.

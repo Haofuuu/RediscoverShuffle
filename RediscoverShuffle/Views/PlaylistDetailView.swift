@@ -11,8 +11,7 @@ struct PlaylistDetailView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.screenArrival) private var screenArrival
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.playlistPage) private var page
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @EnvironmentObject private var pinnedPlaylistStore: PinnedPlaylistStore
     @EnvironmentObject private var generatedQueueSession: GeneratedQueueSession
@@ -21,12 +20,12 @@ struct PlaylistDetailView: View {
     @AppStorage(SettingsKeys.playlistSongSortOption) private var songSortRawValue = PlaylistSongSortOption.defaultValue.rawValue
     @AppStorage(SettingsKeys.showPlayCounts) private var showPlayCounts = AppSettingDefaults.showPlayCounts
     @ScaledMetric(relativeTo: .title) private var heroArtworkSize = 236
-    @StateObject private var viewModel: PlaylistViewModel
+    @ObservedObject private var viewModel: PlaylistViewModel
     @State private var listMode = ListMode.upNext
     @State private var scroll = ScrollTracker()
     @State private var headerHeight: CGFloat = 540
-    @State private var navigationBarBottom: CGFloat = 100
-    @State private var showsNavigationTitle = false
+    @State private var topBarBottom: CGFloat = 100
+    @State private var showsBarTitle = false
     @State private var playFeedbackTrigger = 0
     @State private var reshuffleFeedbackTrigger = 0
     @State private var showsRediscoveryInfo = false
@@ -34,18 +33,14 @@ struct PlaylistDetailView: View {
     /// screen can say the new order isn't playing until Play is tapped.
     @State private var queuePlayingBeforeReshuffle: UUID?
 
-    /// Opens a playlist. Pass the saved queue when it belongs to this playlist
-    /// so its order and live progress carry over; otherwise a fresh preview
-    /// order is generated immediately.
-    init(playlist: LibraryPlaylist, savedQueue: PlaylistViewModel? = nil) {
-        _viewModel = StateObject(
-            wrappedValue: savedQueue
-                ?? ReturningPage.take(for: playlist)
-                ?? Self.previewQueue(for: playlist)
-        )
+    /// Shows a playlist's order. The page stage that opens the screen owns
+    /// the order, so a page that comes back shows the one it left with.
+    init(viewModel: PlaylistViewModel) {
+        self.viewModel = viewModel
     }
 
-    private static func previewQueue(for playlist: LibraryPlaylist) -> PlaylistViewModel {
+    /// A fresh preview order for a playlist that has no saved queue.
+    static func previewQueue(for playlist: LibraryPlaylist) -> PlaylistViewModel {
         let viewModel = PlaylistViewModel(playlist: playlist)
         let storedStrength = UserDefaults.standard.object(forKey: SettingsKeys.rediscoveryStrength) as? Double
         viewModel.reshuffle(
@@ -90,54 +85,26 @@ struct PlaylistDetailView: View {
                 palette: palette,
                 arrangement: fieldArrangement,
                 isPlaying: isFollowingLiveQueue && playbackService.isPlaying,
-                fieldHeight: navigationBarBottom + headerHeight + 32,
+                fieldHeight: topBarBottom + headerHeight + 32,
                 scroll: scroll
             )
         }
         .screenTheme(palette)
         .onGeometryChange(for: CGFloat.self) { proxy in
-            // Depending on the OS, the list either starts below the bar or
-            // reports the bar as a safe-area inset; either value is its bottom.
-            max(proxy.frame(in: .global).minY, proxy.safeAreaInsets.top)
+            // The list runs up under the top bar, which it sees as part of
+            // its safe area.
+            proxy.safeAreaInsets.top
         } action: { newValue in
-            navigationBarBottom = newValue
+            topBarBottom = newValue
         }
-        .navigationTitle(viewModel.playlist.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(viewModel.playlist.name)
-                    .font(.headline)
-                    .lineLimit(1)
-                    .opacity(showsNavigationTitle ? 1 : 0)
-                    .accessibilityHidden(!showsNavigationTitle)
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                pinButton
-            }
+        .topBar(scroll: scroll, isOverTitle: showsBarTitle) {
+            topBar
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: playFeedbackTrigger)
         .sensoryFeedback(.impact(weight: .light), trigger: reshuffleFeedbackTrigger)
         .onAppear {
             rediscoveryStrength = normalizedStrength
             songSortRawValue = songSortOption.rawValue
-            screenArrival?.goBack = { [dismiss] animated in
-                guard !animated else {
-                    dismiss()
-                    return
-                }
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
-                    dismiss()
-                }
-            }
-            screenArrival?.onDeparture = { [viewModel] departure in
-                switch departure {
-                case .started: ReturningPage.remember(viewModel)
-                case .finished: ReturningPage.gone(viewModel)
-                }
-            }
         }
         .onChange(of: rediscoveryStrength) { oldValue, newValue in
             // A new strength previews immediately, but never disturbs a queue
@@ -160,11 +127,62 @@ struct PlaylistDetailView: View {
         }
     }
 
+    // MARK: Top bar
+
+    /// Back, the playlist's name once the large one has scrolled away, and
+    /// the pin. The page is moved by the page stage rather than pushed on a
+    /// navigation stack, so it draws its own bar.
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            Button {
+                page?.goBack()
+            } label: {
+                Image(systemName: "chevron.backward")
+                    .barButtonLabel()
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.primary)
+            .accessibilityLabel("Back")
+
+            Text(viewModel.playlist.name)
+                .font(.headline)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .opacity(showsBarTitle ? 1 : 0)
+                .accessibilityHidden(!showsBarTitle)
+
+            pinButton
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 44)
+    }
+
+    private var pinButton: some View {
+        let isPinned = pinnedPlaylistStore.isPinned(viewModel.playlist.persistentIDString)
+        return Button {
+            pinnedPlaylistStore.toggle(viewModel.playlist.persistentIDString)
+        } label: {
+            Image(systemName: isPinned ? "pin.fill" : "pin")
+                .barButtonLabel()
+        }
+        .buttonStyle(.plain)
+        // The ember marks a pinned playlist; unpinned it matches the back
+        // button, which also keeps it clear on deep artwork colours.
+        .foregroundStyle(isPinned ? Color.ember : Color.primary)
+        .accessibilityLabel(isPinned ? String(localized: "Unpin Playlist") : String(localized: "Pin Playlist"))
+        .sensoryFeedback(.selection, trigger: isPinned)
+    }
+
     // MARK: Header
 
     private var header: some View {
         VStack(spacing: 18) {
             PlaylistArtworkView(playlist: viewModel.playlist, size: min(heroArtworkSize, 300))
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    proxy.frame(in: .playlistPage)
+                } action: { frame in
+                    page?.coverFrame = frame
+                }
                 .shadow(color: .black.opacity(colorScheme == .dark ? 0.45 : 0.24), radius: 28, y: 16)
                 .padding(.top, 12)
 
@@ -176,10 +194,10 @@ struct PlaylistDetailView: View {
                     .multilineTextAlignment(.center)
                     .accessibilityAddTraits(.isHeader)
                     .onGeometryChange(for: Bool.self) { proxy in
-                        proxy.frame(in: .global).maxY < navigationBarBottom
+                        proxy.frame(in: .playlistPage).maxY < topBarBottom
                     } action: { isHidden in
                         withAnimation(.strongEaseOut(duration: 0.16)) {
-                            showsNavigationTitle = isHidden
+                            showsBarTitle = isHidden
                         }
                     }
 
@@ -228,11 +246,6 @@ struct PlaylistDetailView: View {
 
     private var rediscoveryInfoButton: some View {
         Button {
-            // iOS holds a popover requested mid-transition and shows it
-            // afterwards, over whatever screen is then on top.
-            guard !isLeaving else {
-                return
-            }
             showsRediscoveryInfo = true
         } label: {
             Image(systemName: "info.circle")
@@ -246,13 +259,6 @@ struct PlaylistDetailView: View {
         .accessibilityHint("Explains unplayed and overlooked songs")
         .popover(isPresented: $showsRediscoveryInfo) {
             RediscoveryInfoView()
-                .onAppear {
-                    // The last guard: an explanation that belongs to a
-                    // screen that has gone never stays over the next one.
-                    if isLeaving {
-                        showsRediscoveryInfo = false
-                    }
-                }
                 .presentationCompactAdaptation(.popover)
                 .frostedPopoverBackground()
         }
@@ -373,33 +379,6 @@ struct PlaylistDetailView: View {
         .accessibilityLabel("Rediscovery strength")
         .accessibilityValue(strengthName)
         .accessibilityHint("Chooses how strongly less-played songs lead the order")
-    }
-
-    /// Read when a button is tapped, so it holds even while SwiftUI has
-    /// stopped updating this screen. True once the screen is grabbed to be
-    /// swiped away or starts going away; the zoom transition's guard also
-    /// switches its touches off in UIKit, which the toolbar sits outside.
-    private var isLeaving: Bool {
-        screenArrival?.isSettled == false
-    }
-
-    private var pinButton: some View {
-        let isPinned = pinnedPlaylistStore.isPinned(viewModel.playlist.persistentIDString)
-        return Button {
-            guard !isLeaving else {
-                return
-            }
-            pinnedPlaylistStore.toggle(viewModel.playlist.persistentIDString)
-        } label: {
-            Label(
-                isPinned ? String(localized: "Unpin Playlist") : String(localized: "Pin Playlist"),
-                systemImage: isPinned ? "pin.fill" : "pin"
-            )
-        }
-        // The ember marks a pinned playlist; unpinned it matches the back
-        // button, which also keeps it clear on deep artwork colours.
-        .tint(isPinned ? Color.ember : Color.primary)
-        .sensoryFeedback(.selection, trigger: isPinned)
     }
 
     // MARK: Song list
@@ -598,38 +577,6 @@ struct PlaylistDetailView: View {
 }
 
 /// What the rediscovery words mean, opened from a playlist's song count.
-/// The page of a playlist that's going away. Tapping that playlist again
-/// while it zooms back opens a new screen, and without this it would arrive
-/// freshly shuffled; with it, the same page comes straight back.
-@MainActor
-private enum ReturningPage {
-    private static var page: (viewModel: PlaylistViewModel, until: Date)?
-
-    /// Kept while the playlist zooms back, however long a swipe takes,
-    /// within a limit in case the end is never reported.
-    static func remember(_ viewModel: PlaylistViewModel) {
-        page = (viewModel, .now.addingTimeInterval(5))
-    }
-
-    /// Once it has gone, a tap that just missed the zoom still brings it back.
-    static func gone(_ viewModel: PlaylistViewModel) {
-        guard let page, page.viewModel === viewModel else {
-            return
-        }
-        self.page = (viewModel, min(page.until, .now.addingTimeInterval(0.5)))
-    }
-
-    static func take(for playlist: LibraryPlaylist) -> PlaylistViewModel? {
-        defer {
-            page = nil
-        }
-        guard let page, page.viewModel.playlist.id == playlist.id, page.until > .now else {
-            return nil
-        }
-        return page.viewModel
-    }
-}
-
 private struct RediscoveryInfoView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -681,7 +628,66 @@ private struct RediscoveryInfoView: View {
     }
 }
 
+/// The bar's material before iOS 26: clear over the header at rest, like a
+/// navigation bar's, and filled once rows scroll beneath. It reads the
+/// scroll position itself, so scrolling redraws only the bar's background.
+private struct BarMaterial: View {
+    let scroll: ScrollTracker
+    /// iOS 17 can't read the scroll position; there the bar fills once the
+    /// playlist's name has scrolled under it.
+    let isOverTitle: Bool
+
+    var body: some View {
+        let isFilled = scroll.offset > 1 || isOverTitle
+        Rectangle()
+            .fill(.bar)
+            .ignoresSafeArea(edges: .top)
+            .opacity(isFilled ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: isFilled)
+    }
+}
+
 private extension View {
+    /// Pins a bar to the top of the page. On iOS 26 and later the list
+    /// fades beneath it under the system's scroll edge effect; before, the
+    /// bar gains the system's bar material once the list has scrolled.
+    @ViewBuilder
+    func topBar<Content: View>(
+        scroll: ScrollTracker,
+        isOverTitle: Bool,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        if #available(iOS 26.0, *) {
+            safeAreaBar(edge: .top, spacing: 0, content: content)
+        } else {
+            safeAreaInset(edge: .top, spacing: 0) {
+                content()
+                    .background {
+                        BarMaterial(scroll: scroll, isOverTitle: isOverTitle)
+                    }
+            }
+        }
+    }
+
+    /// A bar button's symbol in a full-size target: on Liquid Glass from
+    /// iOS 26, as the system's own bar buttons are, and bare before. The
+    /// symbol is drawn over the glass, never through it, so it shrinks with
+    /// the page while a swipe back holds it.
+    @ViewBuilder
+    func barButtonLabel() -> some View {
+        let symbol = font(.body.weight(.medium))
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        if #available(iOS 26.0, *) {
+            symbol.background {
+                Color.clear
+                    .glassEffect(.regular.interactive(), in: Circle())
+            }
+        } else {
+            symbol
+        }
+    }
+
     /// A thin frosted material on every iOS version, in place of the Liquid
     /// Glass iOS 26 and later give popovers on their own. The popover sits
     /// over a vivid artwork-coloured field, and through clear glass the

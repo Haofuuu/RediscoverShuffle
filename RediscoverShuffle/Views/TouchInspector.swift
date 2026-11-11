@@ -601,7 +601,7 @@ private struct GestureInfo {
 
         let bookkeeping = [
             "Relationship", "TouchDurationObserving", "DelayedTouchesBegan", "SecondaryClickDriver",
-            "TouchDownWatcher", "TouchObserver",
+            "TouchObserver",
         ]
         if bookkeeping.contains(where: type.contains) {
             kind = .ignored
@@ -611,12 +611,8 @@ private struct GestureInfo {
             kind = .followed
         }
 
-        if type == "SwipeBackGestureRecognizer" {
-            name = "app swipe back"
-        } else if label.contains("ZoomInteractiveDismissSwipe") {
-            name = "zoom swipe"
-        } else if label.contains("ZoomInteractiveDismissPinch") {
-            name = "zoom pinch"
+        if type == "PageSwipeGestureRecognizer" {
+            name = "page swipe back"
         } else if gesture is UIScreenEdgePanGestureRecognizer || type.contains("ParallaxTransitionPan") {
             name = "edge swipe back"
         } else if type.contains("ContentSwipeDismiss") {

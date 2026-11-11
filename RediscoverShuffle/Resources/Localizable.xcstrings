@@ -489,6 +489,16 @@
         }
       }
     },
+    "Back" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
+        }
+      }
+    },
     "Changes the order of songs shown below and remembers the selection" : {
       "extractionState" : "stale",
       "localizations" : {

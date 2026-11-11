@@ -10,11 +10,10 @@ struct PlaylistBrowserView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isCoveredBySheet) private var isCoveredBySheet
+    @Environment(\.pageStage) private var pageStage
     @State private var scroll = ScrollTracker()
     @State private var searchText = ""
     @State private var showsSettings = false
-    @State private var showsSavedQueue = false
-    @Namespace private var playlistTransition
     @State private var showsRemoveQueueError = false
     @State private var removeFeedbackTrigger = 0
     @State private var pinFeedbackTrigger = 0
@@ -98,8 +97,13 @@ struct PlaylistBrowserView: View {
                let lastQueueViewModel = generatedQueueSession.lastQueueViewModel {
                 ContinueQueueCard(
                     viewModel: lastQueueViewModel,
-                    transition: playlistTransition,
-                    open: { showsSavedQueue = true },
+                    open: {
+                        pageStage?.open(
+                            lastQueueViewModel.playlist,
+                            savedQueue: lastQueueViewModel,
+                            from: .continueCard
+                        )
+                    },
                     remove: removeSavedQueue
                 )
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
@@ -212,12 +216,6 @@ struct PlaylistBrowserView: View {
         } message: {
             Text("Rediscover Shuffle could not remove its saved queue. Please try again.")
         }
-        .navigationDestination(isPresented: $showsSavedQueue) {
-            if let savedQueue = generatedQueueSession.lastQueueViewModel {
-                PlaylistDetailView(playlist: savedQueue.playlist, savedQueue: savedQueue)
-                    .zoomTransition(from: ContinueQueueCard.transitionID, in: playlistTransition)
-            }
-        }
         .onChange(of: searchText) { _, newValue in
             if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 editMode?.wrappedValue = .inactive
@@ -277,20 +275,26 @@ struct PlaylistBrowserView: View {
             .moveDisabled(true)
     }
 
+    /// A row that opens the playlist's page out of its cover. The page stage
+    /// shows the page, so the row is a button rather than a navigation link.
     private func playlistLink(for playlist: LibraryPlaylist) -> some View {
-        NavigationLink {
-            PlaylistDetailView(
-                playlist: playlist,
+        Button {
+            // While pinned playlists are being reordered, rows only move.
+            guard editMode?.wrappedValue.isEditing != true else {
+                return
+            }
+            pageStage?.open(
+                playlist,
+                // The saved queue's order and live progress carry over.
                 savedQueue: generatedQueueSession.lastQueueViewModel.flatMap {
                     $0.playlist.id == playlist.id ? $0 : nil
-                }
+                },
+                from: .playlist(playlist.id)
             )
-            .zoomTransition(from: playlist.id, in: playlistTransition)
         } label: {
             PlaylistRow(
                 playlist: playlist,
-                isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString),
-                transition: playlistTransition
+                isPinned: pinnedPlaylistStore.isPinned(playlist.persistentIDString)
             )
         }
         .listRowBackground(Color.clear)
@@ -359,7 +363,6 @@ private struct PlaylistRow: View {
     @Environment(\.screenTheme) private var theme
     let playlist: LibraryPlaylist
     let isPinned: Bool
-    let transition: Namespace.ID
 
     private var isEmpty: Bool {
         playlist.entries.isEmpty
@@ -399,7 +402,7 @@ private struct PlaylistRow: View {
     private var artwork: some View {
         PlaylistArtworkView(playlist: playlist, size: Self.artworkSize)
             .opacity(isEmpty ? 0.55 : 1)
-            .zoomSource(id: playlist.id, in: transition, cornerRadius: artworkCornerRadius(for: Self.artworkSize))
+            .pageSource(.playlist(playlist.id), cornerRadius: artworkCornerRadius(for: Self.artworkSize))
     }
 
     private var titleAndDetail: some View {
@@ -422,6 +425,14 @@ private struct PlaylistRow: View {
                 .foregroundStyle(Color.ember)
                 .accessibilityHidden(true)
         }
+    }
+
+    /// The row opens a page, as a navigation link's chevron says.
+    private var chevron: some View {
+        Image(systemName: "chevron.forward")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color(.tertiaryLabel))
+            .accessibilityHidden(true)
     }
 
     private var playlistAccessibilityLabel: String {
@@ -461,6 +472,7 @@ private struct PlaylistRow: View {
                     titleAndDetail
                     Spacer(minLength: 8)
                     pin
+                    chevron
                 }
             }
         }
@@ -475,14 +487,12 @@ private struct PlaylistRow: View {
 /// own colours, so it sits in the background rather than on top of it, in
 /// light mode too; the artwork carries the playlist's colours.
 private struct ContinueQueueCard: View {
-    static let transitionID = "continueQueue"
     private static let artworkSize: CGFloat = 64
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.screenTheme) private var theme
     @EnvironmentObject private var playbackService: MusicPlaybackService
     @ObservedObject var viewModel: PlaylistViewModel
-    let transition: Namespace.ID
     let open: () -> Void
     let remove: () -> Void
 
@@ -533,7 +543,7 @@ private struct ContinueQueueCard: View {
             HStack(spacing: 14) {
                 PlaylistArtworkView(playlist: viewModel.playlist, size: Self.artworkSize)
                     .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
-                    .zoomSource(id: Self.transitionID, in: transition, cornerRadius: artworkCornerRadius(for: Self.artworkSize))
+                    .pageSource(.continueCard, cornerRadius: artworkCornerRadius(for: Self.artworkSize))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(viewModel.playlist.name)
@@ -967,10 +977,13 @@ private final class NextSmoothFrame: NSObject {
 }
 
 /// The welcome screen's colour field behind the Playlists header. It drifts
-/// only while music plays, and watches playback itself so updates redraw
-/// the field rather than the whole list.
+/// only while music plays and nothing covers it, and watches playback and
+/// the page stage itself, so their changes redraw the field rather than
+/// the whole list.
 private struct BrowserBackdrop: View {
     @EnvironmentObject private var playbackService: MusicPlaybackService
+    @Environment(\.pageStage) private var pageStage
+    @Environment(\.isCoveredBySheet) private var isCoveredBySheet
     let palette: ArtworkColorPalette
     let scroll: ScrollTracker
 
@@ -982,6 +995,7 @@ private struct BrowserBackdrop: View {
             fieldHeight: 460,
             scroll: scroll
         )
+        .environment(\.isCoveredBySheet, isCoveredBySheet || pageStage?.cover.hidesPlaylists == true)
     }
 }
 

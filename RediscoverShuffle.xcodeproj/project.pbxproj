@@ -17,6 +17,7 @@
 		A10000000000000000000008 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* PermissionView.swift */; };
 		A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* PlaylistBrowserView.swift */; };
 		A1000000000000000000000A /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* PlaylistDetailView.swift */; };
+		A1000000000000000000F003 /* PlaylistPageStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000F003 /* PlaylistPageStage.swift */; };
 		A1000000000000000000000C /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* Components.swift */; };
 		A1000000000000000000F001 /* TouchInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000F001 /* TouchInspector.swift */; };
 		A1000000000000000000000D /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* MediaPlayer.framework */; };
@@ -25,6 +26,7 @@
 		A10000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* Assets.xcassets */; };
 		A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* GeneratedQueueSession.swift */; };
 		A10000000000000000000012 /* QueueProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* QueueProgress.swift */; };
+		A1000000000000000000F002 /* PageSwipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000F002 /* PageSwipe.swift */; };
 		A10000000000000000000013 /* PlaylistSongSort.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* PlaylistSongSort.swift */; };
 		A10000000000000000000014 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* AppSettings.swift */; };
 		A10000000000000000000015 /* GeneratedQueueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* GeneratedQueueStore.swift */; };
@@ -60,6 +62,7 @@
 		A20000000000000000000008 /* PermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* PlaylistBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistBrowserView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+		A2000000000000000000F003 /* PlaylistPageStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistPageStage.swift; sourceTree = "<group>"; };
 		A2000000000000000000000C /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		A2000000000000000000F001 /* TouchInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchInspector.swift; sourceTree = "<group>"; };
 		A2000000000000000000000D /* WeightedShuffleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightedShuffleEngineTests.swift; sourceTree = "<group>"; };
@@ -71,6 +74,7 @@
 		A20000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A20000000000000000000014 /* GeneratedQueueSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedQueueSession.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* QueueProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueProgress.swift; sourceTree = "<group>"; };
+		A2000000000000000000F002 /* PageSwipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSwipe.swift; sourceTree = "<group>"; };
 		A20000000000000000000016 /* PlaylistSongSort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistSongSort.swift; sourceTree = "<group>"; };
 		A20000000000000000000017 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A20000000000000000000018 /* GeneratedQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedQueueStore.swift; sourceTree = "<group>"; };
@@ -153,6 +157,7 @@
 			children = (
 				A20000000000000000000003 /* WeightedShuffleEngine.swift */,
 				A20000000000000000000015 /* QueueProgress.swift */,
+				A2000000000000000000F002 /* PageSwipe.swift */,
 				A20000000000000000000016 /* PlaylistSongSort.swift */,
 				A20000000000000000000017 /* AppSettings.swift */,
 				A20000000000000000000018 /* GeneratedQueueStore.swift */,
@@ -178,6 +183,7 @@
 				A20000000000000000000008 /* PermissionView.swift */,
 				A20000000000000000000009 /* PlaylistBrowserView.swift */,
 				A2000000000000000000000A /* PlaylistDetailView.swift */,
+				A2000000000000000000F003 /* PlaylistPageStage.swift */,
 				A2000000000000000000000C /* Components.swift */,
 				A20000000000000000000019 /* SettingsView.swift */,
 				A2000000000000000000F001 /* TouchInspector.swift */,
@@ -336,11 +342,13 @@
 				A10000000000000000000008 /* PermissionView.swift in Sources */,
 				A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */,
 				A1000000000000000000000A /* PlaylistDetailView.swift in Sources */,
+				A1000000000000000000F003 /* PlaylistPageStage.swift in Sources */,
 				A1000000000000000000000C /* Components.swift in Sources */,
 				A1000000000000000000F001 /* TouchInspector.swift in Sources */,
 				A1000000000000000000000F /* PinnedPlaylistStore.swift in Sources */,
 				A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */,
 				A10000000000000000000012 /* QueueProgress.swift in Sources */,
+				A1000000000000000000F002 /* PageSwipe.swift in Sources */,
 				A10000000000000000000013 /* PlaylistSongSort.swift in Sources */,
 				A10000000000000000000014 /* AppSettings.swift in Sources */,
 				A10000000000000000000015 /* GeneratedQueueStore.swift in Sources */,
