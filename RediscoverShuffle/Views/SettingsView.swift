@@ -68,6 +68,10 @@ struct SettingsView: View {
                 }
             }
 
+            #if DEBUG
+            TouchInspectorSettingsSection()
+            #endif
+
             Section {
                 LabeledContent("Version", value: metadata.versionAndBuild)
 

@@ -254,7 +254,7 @@ struct PlaylistDetailView: View {
                     }
                 }
                 .presentationCompactAdaptation(.popover)
-                .opaquePopoverBackground()
+                .frostedPopoverBackground()
         }
     }
 
@@ -656,8 +656,8 @@ private struct RediscoveryInfoView: View {
         .padding(20)
         .frame(idealWidth: 320, maxWidth: 360, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
-        // Plain primary and secondary label colours against the opaque
-        // background below, never vibrant or artwork-tinted ones.
+        // Plain primary and secondary label colours on the frosted
+        // background, never vibrant or artwork-tinted ones.
         .foregroundStyle(.primary)
     }
 
@@ -682,15 +682,15 @@ private struct RediscoveryInfoView: View {
 }
 
 private extension View {
-    /// An opaque system background on every iOS version, replacing the
-    /// Liquid Glass iOS 26 and later give popovers on their own and any
-    /// see-through material. The popover sits over a vivid, often dark,
-    /// artwork-coloured field, and through glass that field's colours
-    /// washed out the explanation's text. `systemBackground` adapts to
-    /// light and dark mode and, as a popover is an elevated presentation,
-    /// resolves to the elevated grey in dark mode, so `.primary` and
-    /// `.secondary` text keep their full contrast whatever the artwork.
-    func opaquePopoverBackground() -> some View {
-        presentationBackground(Color(.systemBackground))
+    /// A thin frosted material on every iOS version, in place of the Liquid
+    /// Glass iOS 26 and later give popovers on their own. The popover sits
+    /// over a vivid artwork-coloured field, and through clear glass the
+    /// playlist's title and Play button showed plainly behind the text.
+    /// The material blurs them into a soft tint of the artwork's colour, so
+    /// the popover stays light and translucent but reads cleanly. It
+    /// follows light and dark mode, and `.primary` and `.secondary` text
+    /// keep their contrast on it.
+    func frostedPopoverBackground() -> some View {
+        presentationBackground(.thinMaterial)
     }
 }

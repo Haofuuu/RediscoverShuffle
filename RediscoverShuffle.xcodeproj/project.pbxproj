@@ -18,6 +18,7 @@
 		A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* PlaylistBrowserView.swift */; };
 		A1000000000000000000000A /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* PlaylistDetailView.swift */; };
 		A1000000000000000000000C /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* Components.swift */; };
+		A1000000000000000000F001 /* TouchInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000F001 /* TouchInspector.swift */; };
 		A1000000000000000000000D /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* MediaPlayer.framework */; };
 		A1000000000000000000000E /* WeightedShuffleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* WeightedShuffleEngineTests.swift */; };
 		A1000000000000000000000F /* PinnedPlaylistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* PinnedPlaylistStore.swift */; };
@@ -60,6 +61,7 @@
 		A20000000000000000000009 /* PlaylistBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistBrowserView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000C /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		A2000000000000000000F001 /* TouchInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchInspector.swift; sourceTree = "<group>"; };
 		A2000000000000000000000D /* WeightedShuffleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightedShuffleEngineTests.swift; sourceTree = "<group>"; };
 		A2000000000000000000000E /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		A2000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 				A2000000000000000000000A /* PlaylistDetailView.swift */,
 				A2000000000000000000000C /* Components.swift */,
 				A20000000000000000000019 /* SettingsView.swift */,
+				A2000000000000000000F001 /* TouchInspector.swift */,
 				A2000000000000000000001C /* NowPlayingViews.swift */,
 				A2000000000000000000001E /* ColorField.swift */,
 			);
@@ -334,6 +337,7 @@
 				A10000000000000000000009 /* PlaylistBrowserView.swift in Sources */,
 				A1000000000000000000000A /* PlaylistDetailView.swift in Sources */,
 				A1000000000000000000000C /* Components.swift in Sources */,
+				A1000000000000000000F001 /* TouchInspector.swift in Sources */,
 				A1000000000000000000000F /* PinnedPlaylistStore.swift in Sources */,
 				A10000000000000000000011 /* GeneratedQueueSession.swift in Sources */,
 				A10000000000000000000012 /* QueueProgress.swift in Sources */,

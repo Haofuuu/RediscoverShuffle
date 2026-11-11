@@ -23,6 +23,7 @@ struct RediscoverShuffleApp: App {
                 .background {
                     WindowAppearance(style: interfaceStyle)
                 }
+                .touchInspector()
         }
     }
 

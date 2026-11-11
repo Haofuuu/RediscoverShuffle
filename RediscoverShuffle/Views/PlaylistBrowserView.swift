@@ -353,6 +353,8 @@ struct PlaylistBrowserView: View {
 }
 
 private struct PlaylistRow: View {
+    private static let artworkSize: CGFloat = 56
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.screenTheme) private var theme
     let playlist: LibraryPlaylist
@@ -395,9 +397,9 @@ private struct PlaylistRow: View {
     }
 
     private var artwork: some View {
-        PlaylistArtworkView(playlist: playlist, size: 56)
+        PlaylistArtworkView(playlist: playlist, size: Self.artworkSize)
             .opacity(isEmpty ? 0.55 : 1)
-            .zoomSource(id: playlist.id, in: transition)
+            .zoomSource(id: playlist.id, in: transition, cornerRadius: artworkCornerRadius(for: Self.artworkSize))
     }
 
     private var titleAndDetail: some View {
@@ -474,6 +476,7 @@ private struct PlaylistRow: View {
 /// light mode too; the artwork carries the playlist's colours.
 private struct ContinueQueueCard: View {
     static let transitionID = "continueQueue"
+    private static let artworkSize: CGFloat = 64
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.screenTheme) private var theme
@@ -528,9 +531,9 @@ private struct ContinueQueueCard: View {
     var body: some View {
         Button(action: open) {
             HStack(spacing: 14) {
-                PlaylistArtworkView(playlist: viewModel.playlist, size: 64)
+                PlaylistArtworkView(playlist: viewModel.playlist, size: Self.artworkSize)
                     .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
-                    .zoomSource(id: Self.transitionID, in: transition)
+                    .zoomSource(id: Self.transitionID, in: transition, cornerRadius: artworkCornerRadius(for: Self.artworkSize))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(viewModel.playlist.name)
